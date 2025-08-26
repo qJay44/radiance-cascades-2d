@@ -5,3 +5,5 @@
 #define PI_3 (PI / 3.f)
 #define PI_6 (PI / 6.f)
 
+#define TAU (2.f * PI)
+

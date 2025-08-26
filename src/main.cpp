@@ -1,17 +1,18 @@
 #include <cstddef>
 #include <direct.h>
 
-#include "engine/Rectangle2D.hpp"
-#include "engine/Shader.hpp"
+#include "engine/shapes/Circle2D.hpp"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
-#include "rc/Texture.hpp"
 #include "utils/clrp.hpp"
 #include "engine/InputsHandler.hpp"
 #include "engine/gui.hpp"
+#include "engine/shapes/Rectangle2D.hpp"
+#include "engine/Shader.hpp"
 #include "rc/Config.hpp"
+#include "rc/Texture.hpp"
 
 using global::window;
 
@@ -90,7 +91,8 @@ int main() {
   // ----- Shaders --------------------------------------------- //
 
   Shader shaderGenerateRC("generateRC.comp");
-  Shader shaderScreen("screen.vert", "screen.frag");
+  Shader shaderScreen("shape2D.vert", "screen.frag");
+  Shader shaderCircle2D("shape2D.vert", "circle2D.frag");
   shaderScreen.setUniformTexture("u_rcTexture", 0);
 
   // ----- Cascades texture ------------------------------------ //
@@ -111,6 +113,7 @@ int main() {
   // ----------------------------------------------------------- //
 
   Rectangle2D screenRect(winSize);
+  Circle2D circleTest(90.f, winSize / 2, {1.f, 0.f, 1.f});
 
   // Render loop
   while (!glfwWindowShouldClose(window)) {
@@ -150,12 +153,12 @@ int main() {
     glClearColor(0.f, 0.f, 0.f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    // draw stuff...
     shaderScreen.setUniform1ui("u_cascadeIdx", rc::config.drawCascadeIdx);
 
     rcTexture.bind();
     screenRect.draw(shaderScreen);
     rcTexture.unbind();
+    circleTest.draw(shaderCircle2D);
 
     gui::draw();
     ImGui::Render();
