@@ -1,0 +1,14 @@
+#version 460 core
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+layout(rg8, binding = 0) writeonly uniform image2DArray image;
+
+void main() {
+  const ivec3 texCoord = ivec3(gl_GlobalInvocationID);
+
+  vec2 col = vec2(texCoord) / gl_NumWorkGroups.xy;
+
+  imageStore(image, texCoord, vec4(col, 0.f, 1.f));
+}
+
