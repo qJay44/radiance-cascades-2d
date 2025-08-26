@@ -92,7 +92,6 @@ int main() {
   Shader shaderGenerateRC("generateRC.comp");
   Shader shaderScreen("screen.vert", "screen.frag");
   shaderScreen.setUniformTexture("u_rcTexture", 0);
-  shaderScreen.setUniform1ui("u_cascadeIdx", 0);
 
   // ----- Cascades texture ------------------------------------ //
 
@@ -152,6 +151,8 @@ int main() {
     glClear(GL_COLOR_BUFFER_BIT);
 
     // draw stuff...
+    shaderScreen.setUniform1ui("u_cascadeIdx", rc::config.drawCascadeIdx);
+
     rcTexture.bind();
     screenRect.draw(shaderScreen);
     rcTexture.unbind();

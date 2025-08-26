@@ -4,12 +4,14 @@
 
 namespace rc {
 
-static struct Config {
+extern struct Config {
   float interval0;
   float diagonal;
   float factor;
   float intervalStart;
   u8 cascadeCount;
+
+  u8 drawCascadeIdx = 0;
 
   void update() {
     vec2 winSize = getWinSize(global::window);
