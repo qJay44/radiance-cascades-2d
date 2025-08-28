@@ -7,6 +7,8 @@
 
 class Shape2D {
 public:
+  virtual vec2 getPosition() const;
+
   void translate(vec2 v);
   void rotate(float angleRad);
   void scale(vec2 v);

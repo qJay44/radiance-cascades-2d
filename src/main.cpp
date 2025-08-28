@@ -1,7 +1,9 @@
 #include <cstddef>
+#include <cstdio>
 #include <direct.h>
 
 #include "engine/shapes/Circle2D.hpp"
+#include "engine/texture/Texture2D.hpp"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -11,8 +13,11 @@
 #include "engine/gui.hpp"
 #include "engine/shapes/Rectangle2D.hpp"
 #include "engine/Shader.hpp"
+#include "engine/FBO.hpp"
 #include "rc/Config.hpp"
-#include "rc/Texture.hpp"
+#include "rc/CascadesTexture.hpp"
+#include "ocl/OCL_SDF.hpp"
+#include "utils/utils.hpp"
 
 using global::window;
 
@@ -49,7 +54,7 @@ int main() {
   glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
   // Window init
-  window = glfwCreateWindow(900, 900, "Title", NULL, NULL);
+  window = glfwCreateWindow(1024, 1024, "Title", NULL, NULL);
   ivec2 winSize;
   glfwGetWindowSize(window, &winSize.x, &winSize.y);
 
@@ -92,13 +97,17 @@ int main() {
 
   Shader shaderGenerateRC("generateRC.comp");
   Shader shaderScreen("shape2D.vert", "screen.frag");
-  Shader shaderCircle2D("shape2D.vert", "circle2D.frag");
+  Shader shaderShape2D("shape2D.vert", "shape2D.frag");
+
+  // ----- Cascades init --------------------------------------- //
+
+  rc::config.init(7.f, 0);
+  rc::CascadesTexture& rcTexture = rc::config.cascadesTex;
   shaderScreen.setUniformTexture("u_rcTexture", 0);
-
-  // ----- Cascades texture ------------------------------------ //
-
-  rc::config.update();
-  rc::Texture rcTexture("u_rcTexture", 0, rc::config.cascadeCount);
+  shaderScreen.setUniformTexture("u_shapesTexture", 1);
+  shaderScreen.setUniformTexture("u_sdfTexture", 2);
+  shaderScreen.setUniform1ui("u_stepsPerRay", rc::config.stepsPerRay);
+  shaderScreen.setUniform1f("u_interval0", rc::config.interval0);
 
   // ----- Compute cascades ------------------------------------ //
 
@@ -110,10 +119,30 @@ int main() {
   glDispatchCompute(numGroups.x, numGroups.y, rc::config.cascadeCount);
   glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-  // ----------------------------------------------------------- //
+  // ----- OpenCL SDF ------------------------------------------ //
 
-  Rectangle2D screenRect(winSize);
-  Circle2D circleTest(90.f, winSize / 2, {1.f, 0.f, 1.f});
+  std::vector<Circle2D> circles;
+  circles.push_back(Circle2D(90.f, winSize / 2, {1.f, 0.f, 1.f}));
+
+  std::vector<Rectangle2D> rects;
+  rects.push_back(Rectangle2D({300.f, 100.f}, {200.f, 300.f}, randColor255Norm()));
+
+  OCL_SDF ocl(winSize.x, winSize.y);
+  ocl.updateCirclesBuffer(circles);
+  ocl.updateRectsBuffer(rects);
+  ocl.run();
+
+  Texture2D sdfTexture({"u_sdfTexture", 2, GL_TEXTURE_2D, GL_R8, GL_RED}, winSize, ocl.getPixels());
+
+  // ----- Framebuffers ---------------------------------------- //
+
+  FBO fboShapes(1);
+  Texture2D shapesTexture({"u_shapesTexture", 1}, winSize);
+  fboShapes.attach2D(GL_COLOR_ATTACHMENT0, shapesTexture);
+
+  Rectangle2D screenRect(winSize, winSize / 2);
+
+  // ----------------------------------------------------------- //
 
   // Render loop
   while (!glfwWindowShouldClose(window)) {
@@ -150,15 +179,28 @@ int main() {
       glfwSetWindowTitle(window, std::format("FPS: {} / {:.2f} ms", avg.fps, avg.ms).c_str());
     }
 
+    fboShapes.bind();
+    glClearColor(0.f, 0.f, 0.f, 1.f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    for (const auto& rect : rects) rect.draw(shaderShape2D);
+    for (const auto& circle : circles) circle.draw(shaderShape2D);
+
+    FBO::unbind();
     glClearColor(0.f, 0.f, 0.f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT);
 
     shaderScreen.setUniform1ui("u_cascadeIdx", rc::config.drawCascadeIdx);
 
     rcTexture.bind();
+    shapesTexture.bind();
+    sdfTexture.bind();
+
     screenRect.draw(shaderScreen);
+
     rcTexture.unbind();
-    circleTest.draw(shaderCircle2D);
+    shapesTexture.unbind();
+    sdfTexture.unbind();
 
     gui::draw();
     ImGui::Render();

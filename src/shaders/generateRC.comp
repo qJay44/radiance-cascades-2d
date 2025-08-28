@@ -8,7 +8,8 @@ void main() {
   const ivec3 texCoord = ivec3(gl_GlobalInvocationID);
   const ivec2 imageSize = imageSize(image).xy;
 
-  ivec2 probSize = imageSize / (texCoord.z + 1);
+  int res = int(pow(2, texCoord.z));
+  ivec2 probSize = imageSize / res;
   ivec2 cascadeTexCoord = texCoord.xy % probSize;
   vec2 col = vec2(cascadeTexCoord) / probSize;
 

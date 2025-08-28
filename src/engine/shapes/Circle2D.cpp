@@ -1,6 +1,9 @@
 #include "Circle2D.hpp"
+#include "utils/utils.hpp"
 
-Circle2D::Circle2D(float radius, vec2 pos, vec3 color, size_t points) {
+Circle2D::Circle2D(float radius, vec2 pos, vec3 color, size_t points)
+  : radius(radius) {
+
   vertices.push_back({vec2(0.f), vec2(0.5f)});
 
   const float angleStep = TAU / points;
@@ -30,7 +33,15 @@ Circle2D::Circle2D(float radius, vec2 pos, vec3 color, size_t points) {
   vbo.unbind();
 
   vec2 winSize = getWinSize(global::window);
-  translate(pos - winSize * 0.5f);
-  scale(radius / winSize);
+  translate(pos / winSize * 2.f - 1.f);
+  scale(vec2(radius * 2.f) / (winSize));
+}
+
+const float& Circle2D::getRadius() const {
+  return radius;
+}
+
+vec2 Circle2D::getPosition() const {
+  return (vec2(matTrans[3][0], matTrans[3][1]) * 0.5f + 0.5f) * vec2(getWinSize(global::window));
 }
 

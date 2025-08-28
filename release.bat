@@ -15,6 +15,8 @@ if %ERRORLEVEL% neq 0 (
     exit /b %ERRORLEVEL%
 )
 
+move /y Build\Release\compile_commands.json Build\
+
 cmake --build Build\Release --config Release
 
 if %ERRORLEVEL% neq 0 (
@@ -25,10 +27,8 @@ if %ERRORLEVEL% neq 0 (
     exit /b %ERRORLEVEL%
 )
 
-cd Build\Release\Run
-move /y ..\compile_commands.json ..\..
-
 Rem Lauch
+cd Build\Release\Run
 MyProject.exe
 cd ..\..\..
 

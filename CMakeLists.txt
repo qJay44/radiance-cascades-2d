@@ -53,6 +53,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
   ${GLM_PATH}/include
   ${IMGUI_PATH}/include
   ${UTILS_PATH}/include
+  ${OCL_PATH}/include
 )
 
 target_link_directories(${PROJECT_NAME} PUBLIC
@@ -61,7 +62,8 @@ target_link_directories(${PROJECT_NAME} PUBLIC
   ${GLM_PATH}/lib
   ${IMGUI_PATH}/Build/Release
   ${GLAD_PATH}/Build/Release
+  ${OCL_PATH}/lib/x86_64
 )
 
-target_link_libraries(${PROJECT_NAME} libGLFW_IMGUI libGLAD glm)
+target_link_libraries(${PROJECT_NAME} libGLFW_IMGUI libGLAD glm OpenCL)
 

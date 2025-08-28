@@ -23,7 +23,6 @@ void gui::draw() {
     toggleWholeWindow = false;
   }
 
-
   ImGui::Text("Cascade index: %d/%d", rc::config.drawCascadeIdx, rc::config.cascadeCount - 1);
   ImGui::SameLine();
 
@@ -37,7 +36,6 @@ void gui::draw() {
     u8& idx = rc::config.drawCascadeIdx;
     idx = std::min(u8(idx + 1), u8(rc::config.cascadeCount - 1));
   };
-
 
   ImGui::End();
 }

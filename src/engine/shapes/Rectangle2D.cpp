@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "Vertex2D.hpp"
+#include "utils/utils.hpp"
 
 static const std::vector<Vertex2D> vertices{
   // Triangle 1
@@ -37,7 +38,9 @@ void Rectangle2D::initVO() {
   allocatedVO = true;
 }
 
-Rectangle2D::Rectangle2D(vec2 size, vec2 pos, vec3 color) {
+Rectangle2D::Rectangle2D(vec2 size, vec2 pos, vec3 color)
+  : size(size) {
+
   if (!allocatedVO)
     initVO();
 
@@ -47,7 +50,18 @@ Rectangle2D::Rectangle2D(vec2 size, vec2 pos, vec3 color) {
   vbo = vboRect;
   Shape2D::color = color;
 
-  translate(pos);
-  scale(size / vec2(getWinSize(global::window)));
+  vec2 winSize = getWinSize(global::window);
+  vec2 sizeNorm = size / winSize;
+
+  translate(pos / winSize * 2.f - 1.f);
+  scale(sizeNorm);
+}
+
+const vec2& Rectangle2D::getSize() const {
+  return size;
+}
+
+vec2 Rectangle2D::getPosition() const {
+  return (vec2(matTrans[3][0], matTrans[3][1]) * 0.5f + 0.5f) * vec2(getWinSize(global::window));
 }
 

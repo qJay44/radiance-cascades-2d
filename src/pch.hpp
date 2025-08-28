@@ -19,8 +19,8 @@ using glm::dvec2;
 using glm::dvec3;
 using glm::dvec4;
 
+using glm::mat3;
 using glm::mat4;
-
 
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"

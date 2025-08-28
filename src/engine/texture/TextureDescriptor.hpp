@@ -1,6 +1,9 @@
 #pragma once
 
 struct TextureDescriptor {
+  std::string uniformName;
+  GLuint unit;
+  GLenum target         = GL_TEXTURE_2D;
   GLenum internalFormat = GL_RGB8;          // Color format in the OpenGL
   GLenum format         = GL_RGB;           // Color format of the loaded image
   GLenum type           = GL_UNSIGNED_BYTE; // Color bytes format of the loaded image
