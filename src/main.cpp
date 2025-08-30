@@ -2,9 +2,6 @@
 #include <cstdio>
 #include <direct.h>
 
-#include "ShapeContainer.hpp"
-#include "engine/shapes/Circle2D.hpp"
-#include "engine/texture/Texture2D.hpp"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -15,10 +12,10 @@
 #include "engine/shapes/Rectangle2D.hpp"
 #include "engine/Shader.hpp"
 #include "engine/FBO.hpp"
+#include "engine/texture/Texture2D.hpp"
+#include "ShapeContainer.hpp"
 #include "rc/Config.hpp"
-#include "rc/CascadesTexture.hpp"
 #include "ocl/OCL_SDF.hpp"
-#include "utils/utils.hpp"
 
 using global::window;
 
@@ -101,33 +98,12 @@ int main() {
   Shader shaderScreen("shape2D.vert", "screen.frag");
   Shader shaderShape2D("shape2D.vert", "shape2D.frag");
 
-  // ----- Cascades init --------------------------------------- //
-
-  rc::config.init(7.f, 0);
-  rc::CascadesTexture& rcTexture = rc::config.cascadesTex;
-  shaderScreen.setUniformTexture("u_rcTexture", 0);
-  shaderScreen.setUniformTexture("u_shapesTexture", 1);
-  shaderScreen.setUniformTexture("u_sdfTexture", 2);
-  shaderScreen.setUniform1ui("u_stepsPerRay", rc::config.stepsPerRay);
-  shaderScreen.setUniform1f("u_interval0", rc::config.interval0);
-
-  // ----- Compute cascades ------------------------------------ //
-
-  constexpr uvec2 localSize(16);
-  const uvec2 numGroups = (rcTexture.getSize() + localSize - 1u) / localSize;
-
-  shaderGenerateRC.use();
-  rcTexture.bindImage(GL_WRITE_ONLY);
-  glDispatchCompute(numGroups.x, numGroups.y, rc::config.cascadeCount);
-  glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
   // ----- OpenCL SDF ------------------------------------------ //
-
 
   Rectangle2D screenRect(winSize, winSize / 2);
   ShapeContainer shapeContainer;
   OCL_SDF ocl(winSize.x, winSize.y);
-  Texture2D sdfTexture({"u_sdfTexture", 2, GL_TEXTURE_2D, GL_R8, GL_RED}, winSize);
+  Texture2D sdfTexture({"u_sdfTexture", 0, GL_TEXTURE_2D, GL_R8, GL_RED}, winSize);
 
   // ----- Framebuffers ---------------------------------------- //
 
@@ -136,6 +112,9 @@ int main() {
   fboShapes.attach2D(GL_COLOR_ATTACHMENT0, shapesTexture);
 
   // ----------------------------------------------------------- //
+
+  shaderScreen.setUniformTexture("u_sdfTexture", sdfTexture.getUnit());
+  shaderScreen.setUniformTexture("u_shapesTexture", shapesTexture.getUnit());
 
   // Render loop
   while (!glfwWindowShouldClose(window)) {
@@ -174,6 +153,8 @@ int main() {
 
     InputsHandler::process(shapeContainer);
 
+    rc::config.update(shaderScreen);
+
     ocl.updateCirclesBuffer(shapeContainer.circles);
     ocl.updateRectsBuffer(shapeContainer.rects);
     ocl.run();
@@ -189,15 +170,11 @@ int main() {
     glClearColor(0.f, 0.f, 0.f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    shaderScreen.setUniform1ui("u_cascadeIdx", rc::config.drawCascadeIdx);
-
-    rcTexture.bind();
     shapesTexture.bind();
     sdfTexture.bind();
 
     screenRect.draw(shaderScreen);
 
-    rcTexture.unbind();
     shapesTexture.unbind();
     sdfTexture.unbind();
 

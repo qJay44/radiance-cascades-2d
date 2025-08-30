@@ -1,7 +1,5 @@
 #include "gui.hpp"
 
-#include <algorithm>
-
 #include "imgui.h"
 #include "../rc/Config.hpp"
 
@@ -23,19 +21,18 @@ void gui::draw() {
     toggleWholeWindow = false;
   }
 
-  ImGui::Text("Cascade index: %d/%d", rc::config.drawCascadeIdx, rc::config.cascadeCount - 1);
+  ImGui::SliderFloat("Cascade0 interval", &rc::config.interval0, 1.f, 30.f);
+
+  static int stepsPerRay = rc::config.stepsPerRay;
+  if (ImGui::SliderInt("Steps per ray", &stepsPerRay, 1, 256)) {
+    rc::config.stepsPerRay = static_cast<u8>(stepsPerRay);
+  }
+
+  ImGui::Text("Epsilon: %f", rc::config.epsilon);
   ImGui::SameLine();
 
-  if (ImGui::ArrowButton("##left", ImGuiDir_Left)) {
-    u8& idx = rc::config.drawCascadeIdx;
-    if (idx) idx--;
-  };
-  ImGui::SameLine();
-
-  if (ImGui::ArrowButton("##right", ImGuiDir_Right)) {
-    u8& idx = rc::config.drawCascadeIdx;
-    idx = std::min(u8(idx + 1), u8(rc::config.cascadeCount - 1));
-  };
+  if (ImGui::ArrowButton("##left" , ImGuiDir_Left))  {rc::config.epsilon *= 0.1f;} ImGui::SameLine();
+  if (ImGui::ArrowButton("##right", ImGuiDir_Right)) {rc::config.epsilon *= 10.f;} ImGui::SameLine();
 
   ImGui::End();
 }

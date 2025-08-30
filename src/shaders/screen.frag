@@ -11,59 +11,81 @@ out vec4 FragColor;
 
 in vec2 texCoord;
 
-uniform sampler2DArray u_rcTexture;
 uniform sampler2D u_shapesTexture;
 uniform sampler2D u_sdfTexture;
-uniform uint u_cascadeIdx;
+uniform uint u_cascadeCount;
 uniform uint u_stepsPerRay;
 uniform float u_interval0;
+uniform float u_epsilon;
 
-vec3 rayMarch(vec2 pix, vec2 dir, float rayLength) {
-  uint steps = uint(ceil(rayLength / u_stepsPerRay));
+ivec2 resolution = textureSize(u_shapesTexture, 0).xy;
+vec2 uvStep = 1.f / resolution;
+
+struct Ray {
+  vec2 origin;
+  vec2 dir;
+  float length;
+};
+
+vec4 rayMarch(Ray ray) {
+  uint steps = uint(ceil(ray.length / u_stepsPerRay));
   float dist = 0.f;
+  vec2 pix = ray.origin * uvStep;
 
   for (uint i = 0; i < steps; i++) {
     dist = texture(u_sdfTexture, pix).r;
-    pix += dir * dist;
+    pix += ray.dir * dist;
 
     if (pix.x > 1.f || pix.x < 0.f || pix.y > 1.f || pix.y < 0.f)
       break;
 
-    if (dist < 0.0001f) {
-      return texture(u_shapesTexture, pix).rgb;
+    if (dist < u_epsilon) {
+      return vec4(max(
+        texture(u_shapesTexture, pix).rgb,
+        texture(u_shapesTexture, pix - (ray.dir * uvStep)).rgb
+      ), 0.f);
     }
-
   }
 
-  return vec3(0.f);
+  return vec4(vec3(0.f), 1.f);
+}
+
+float intervalScale(uint cascadeIdx) {
+  float val = 0.f;
+  if (cascadeIdx)
+    val = float(1 << (2 * cascadeIdx));
+
+  return val;
+}
+
+vec2 intervalRange(uint cascadeIdx) {
+  return u_interval0 * vec2(intervalScale(cascadeIdx), intervalScale(cascadeIdx + 1));
 }
 
 void main() {
-  ivec2 texSize = textureSize(u_rcTexture, 0).xy;
+  ivec2 texSize = resolution;
   vec2 uv = gl_FragCoord.xy / texSize;
-  vec3 color = vec3(0.f);
+  vec3 color = texture(u_shapesTexture, uv).rgb;
 
-  for (uint i = 0; i < 4; i++) {
-    uint cascadeRes = uint(pow(2, u_cascadeIdx + i));
-    uint probeSize = uint(texSize / cascadeRes);
-    uvec2 probe = uvec2(gl_FragCoord.xy) % probeSize;
-    uint rayIdx = probe.y * probeSize + probe.x;
-    uint rayCount = probeSize * probeSize;
-    float rayAngle = float(rayIdx) / rayCount * TAU;
-    vec2 rayDir = vec2(cos(rayAngle), sin(rayAngle));
+  for (uint i = 0; i < u_cascadeCount; i++) {
+    uint cascadeRes = uint(pow(2, i));
+    uvec2 probSize = texSize / cascadeRes;
+    uvec2 probPos = probSize / 2;
+    uvec2 dirCoord = uvec2(gl_FragCoord.xy) % probSize;
+    uint dirIdx = dirCoord.x + dirCoord.y * probSize.x;
+    uint dirCount = probSize.x * probSize.y;
 
-    float cascadeRes4 = pow(4, u_cascadeIdx + i);
-    float origin = (u_interval0 * (1.f - cascadeRes4)) / (1.f - 4.f);
-    float rayLength = u_interval0 * cascadeRes4;
+    // +0.5f ?
+    float angle = TAU * ((float(dirIdx) + 0.5f) / float(dirCount));
+    vec2 dir = vec2(cos(angle), sin(angle));
 
-    vec3 light = rayMarch(uv, rayDir, rayLength);
-    color += light / (i + 1);
+    vec2 intervalRange = intervalRange(i);
+    vec2 intervalStart = probPos + dir * intervalRange.x;
+    vec2 intervalEnd   = probPos + dir * intervalRange.y;
+    vec3 radiance = rayMarch(Ray(intervalStart, dir, intervalRange.y - intervalRange.x)).rgb;
+
+    color += radiance / (i + 1);
   }
-
-  // test textures
-  // color = vec3(texture(u_rcTexture, vec3(uv, u_cascadeIdx)).rg, 0.f) * float(u_cascadeIdx == 0) + color;
-  // color = texture(u_shapesTexture, uv).rgb * float(u_cascadeIdx == 1) + color;
-  // color = vec3(texture(u_sdfTexture, uv).r) * float(u_cascadeIdx == 2) + color;
 
   FragColor = vec4(color, 1.f);
 }

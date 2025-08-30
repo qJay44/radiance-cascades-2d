@@ -52,7 +52,7 @@ __kernel void calcSDF(
   }
 
   float3 col = minDst / maxDst;
-  y = height - y; // why??
+  y = height - y;
 
   write_imagef(img, (int2)(x, y), (float4)(col, 1.f));
 }

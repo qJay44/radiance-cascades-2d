@@ -16,7 +16,7 @@ struct ShapeContainer {
     ivec2 winSize = getWinSize(global::window);
 
     circles.push_back(Circle2D(90.f, winSize / 2, {1.f, 0.f, 1.f}));
-    rects.push_back(Rectangle2D({300.f, 100.f}, {100.f, 100.f}, randColor255Norm()));
+    rects.push_back(Rectangle2D({300.f, 100.f}, {500.f, 300.f}, randColor255Norm()));
   }
 
   void moveShape(vec2 mouse, bool hold) {
