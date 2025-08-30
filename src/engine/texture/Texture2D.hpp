@@ -13,6 +13,13 @@ public:
     unbind();
   }
 
+  void update(const u8* pixels) {
+    uvec2 size = getSize();
+    bind();
+    glTexSubImage2D(desc.target, 0, 0, 0, size.x, size.y, desc.format, desc.type, pixels);
+    unbind();
+  }
+
 private:
   friend struct FBO;
 };

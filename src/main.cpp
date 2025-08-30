@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <direct.h>
 
+#include "ShapeContainer.hpp"
 #include "engine/shapes/Circle2D.hpp"
 #include "engine/texture/Texture2D.hpp"
 #include "imgui.h"
@@ -65,7 +66,8 @@ int main() {
   }
   glfwMakeContextCurrent(window);
   glfwSetKeyCallback(window, InputsHandler::keyCallback);
-  glfwSetScrollCallback(window, InputsHandler::scrollCallback);
+  // glfwSetScrollCallback(window, InputsHandler::scrollCallback);
+  // glfwSetMouseButtonCallback(window, InputsHandler::mouseButtonCallback);
 
   // GLAD init
   if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
@@ -121,26 +123,17 @@ int main() {
 
   // ----- OpenCL SDF ------------------------------------------ //
 
-  std::vector<Circle2D> circles;
-  circles.push_back(Circle2D(90.f, winSize / 2, {1.f, 0.f, 1.f}));
 
-  std::vector<Rectangle2D> rects;
-  rects.push_back(Rectangle2D({300.f, 100.f}, {200.f, 300.f}, randColor255Norm()));
-
+  Rectangle2D screenRect(winSize, winSize / 2);
+  ShapeContainer shapeContainer;
   OCL_SDF ocl(winSize.x, winSize.y);
-  ocl.updateCirclesBuffer(circles);
-  ocl.updateRectsBuffer(rects);
-  ocl.run();
-
-  Texture2D sdfTexture({"u_sdfTexture", 2, GL_TEXTURE_2D, GL_R8, GL_RED}, winSize, ocl.getPixels());
+  Texture2D sdfTexture({"u_sdfTexture", 2, GL_TEXTURE_2D, GL_R8, GL_RED}, winSize);
 
   // ----- Framebuffers ---------------------------------------- //
 
   FBO fboShapes(1);
   Texture2D shapesTexture({"u_shapesTexture", 1}, winSize);
   fboShapes.attach2D(GL_COLOR_ATTACHMENT0, shapesTexture);
-
-  Rectangle2D screenRect(winSize, winSize / 2);
 
   // ----------------------------------------------------------- //
 
@@ -179,12 +172,18 @@ int main() {
       glfwSetWindowTitle(window, std::format("FPS: {} / {:.2f} ms", avg.fps, avg.ms).c_str());
     }
 
+    InputsHandler::process(shapeContainer);
+
+    ocl.updateCirclesBuffer(shapeContainer.circles);
+    ocl.updateRectsBuffer(shapeContainer.rects);
+    ocl.run();
+    sdfTexture.update(ocl.getPixels());
+
     fboShapes.bind();
     glClearColor(0.f, 0.f, 0.f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    for (const auto& rect : rects) rect.draw(shaderShape2D);
-    for (const auto& circle : circles) circle.draw(shaderShape2D);
+    shapeContainer.draw(shaderShape2D);
 
     FBO::unbind();
     glClearColor(0.f, 0.f, 0.f, 1.f);

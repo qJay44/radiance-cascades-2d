@@ -1,5 +1,6 @@
 #include "Circle2D.hpp"
 #include "utils/utils.hpp"
+#include "glm/ext/matrix_transform.hpp"
 
 Circle2D::Circle2D(float radius, vec2 pos, vec3 color, size_t points)
   : radius(radius) {
@@ -33,7 +34,7 @@ Circle2D::Circle2D(float radius, vec2 pos, vec3 color, size_t points)
   vbo.unbind();
 
   vec2 winSize = getWinSize(global::window);
-  translate(pos / winSize * 2.f - 1.f);
+  setPosition(pos);
   scale(vec2(radius * 2.f) / (winSize));
 }
 
@@ -41,7 +42,20 @@ const float& Circle2D::getRadius() const {
   return radius;
 }
 
-vec2 Circle2D::getPosition() const {
-  return (vec2(matTrans[3][0], matTrans[3][1]) * 0.5f + 0.5f) * vec2(getWinSize(global::window));
+bool Circle2D::contains(vec2 m) const {
+  vec2 p = getPosition();
+  const float& r = radius;
+
+  return (
+    (m.x <= p.x + r && m.x >= p.x - r) &&
+    (m.y <= p.y + r && m.y >= p.y - r)
+  );
+}
+
+void Circle2D::setPosition(vec2 pos) {
+  vec2 winSize = vec2(getWinSize(global::window));
+  vec2 toTranslate = pos / winSize * 2.f - 1.f;
+  toTranslate.y *= -1.f;
+  matTrans = glm::translate(mat4(1.f), vec3(toTranslate, 0.f));
 }
 

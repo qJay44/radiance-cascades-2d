@@ -220,7 +220,7 @@ void OCL_SDF::run() {
   errCode = clSetKernelArg(kernel, 4, sizeof(cl_uint), &numRects);      assert(errCode == CL_SUCCESS);
 
   errCode = clEnqueueNDRangeKernel(commandQueue, kernel, 2, nullptr, globalWorkSize, localWorkSize, 0, nullptr, nullptr); assert(errCode == CL_SUCCESS);
-  errCode = clEnqueueReadImage(commandQueue, gpuImage, CL_TRUE, origin, region, 0, 0, sdfPixels, 0, nullptr, nullptr);       assert(errCode == CL_SUCCESS);
+  errCode = clEnqueueReadImage(commandQueue, gpuImage, CL_TRUE, origin, region, 0, 0, sdfPixels, 0, nullptr, nullptr);    assert(errCode == CL_SUCCESS);
 
   errCode = clFinish(commandQueue); assert(errCode == CL_SUCCESS);
 }

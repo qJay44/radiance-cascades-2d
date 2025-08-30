@@ -7,7 +7,10 @@
 
 class Shape2D {
 public:
-  virtual vec2 getPosition() const;
+  virtual bool contains(vec2 mouse) const;
+  virtual void setPosition(vec2 pos);
+
+  vec2 getPosition() const;
 
   void translate(vec2 v);
   void rotate(float angleRad);

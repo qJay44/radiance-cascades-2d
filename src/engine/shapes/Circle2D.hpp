@@ -5,11 +5,12 @@
 #include "Shape2D.hpp"
 #include "Vertex2D.hpp"
 
-class Circle2D : public Shape2D {
+class Circle2D final : public Shape2D {
 public:
   Circle2D(float radius, vec2 pos, vec3 color = vec3(0.f), size_t points = 50);
 
-  vec2 getPosition() const override;
+  bool contains(vec2 mouse) const override;
+  void setPosition(vec2 pos) override;
 
   const float& getRadius() const;
 

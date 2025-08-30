@@ -29,7 +29,7 @@ __kernel void calcSDF(
   __global const Rectangle* rectangles, const uint numRectangles
 ) {
   int width = get_image_width(img);
-  // int height = get_image_height(img);
+  int height = get_image_height(img);
 
   int x = get_global_id(0);
   int y = get_global_id(1);
@@ -52,6 +52,7 @@ __kernel void calcSDF(
   }
 
   float3 col = minDst / maxDst;
+  y = height - y; // why??
 
   write_imagef(img, (int2)(x, y), (float4)(col, 1.f));
 }

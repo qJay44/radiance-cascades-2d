@@ -1,6 +1,18 @@
 #include "Shape2D.hpp"
 
 #include "glm/ext/matrix_transform.hpp"
+#include "utils/utils.hpp"
+
+vec2 Shape2D::getPosition() const {
+  vec2 winSize = getWinSize(global::window);
+
+  vec2 posNDC = vec2(matTrans[3][0], matTrans[3][1]);
+  vec2 posNorm = posNDC * 0.5f + 0.5f;
+  posNorm.y = 1.f - posNorm.y;
+  vec2 pos = posNorm * winSize;
+
+  return pos;
+}
 
 void Shape2D::translate(vec2 v) {
   matTrans = glm::translate(matTrans, vec3(v, 0.f));

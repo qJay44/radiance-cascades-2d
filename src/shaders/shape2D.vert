@@ -12,6 +12,6 @@ uniform vec3 u_shapeColor;
 void main() {
   texCoord = in_tex;
   shapeColor = u_shapeColor;
-  gl_Position = u_model * vec4(in_pos, 1.f, 1.f);
+  gl_Position = u_model * vec4(in_pos, 0.f, 1.f);
 }
 

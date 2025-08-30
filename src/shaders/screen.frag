@@ -29,7 +29,7 @@ vec3 rayMarch(vec2 pix, vec2 dir, float rayLength) {
     if (pix.x > 1.f || pix.x < 0.f || pix.y > 1.f || pix.y < 0.f)
       break;
 
-    if (rayLength < 0.0001f) {
+    if (dist < 0.0001f) {
       return texture(u_shapesTexture, pix).rgb;
     }
 
@@ -41,25 +41,29 @@ vec3 rayMarch(vec2 pix, vec2 dir, float rayLength) {
 void main() {
   ivec2 texSize = textureSize(u_rcTexture, 0).xy;
   vec2 uv = gl_FragCoord.xy / texSize;
-  uint cascadeRes = uint(pow(2, u_cascadeIdx));
-  uint probeSize = uint(texSize / cascadeRes);
-  uvec2 probe = uvec2(gl_FragCoord.xy) % probeSize;
-  uint rayIdx = probe.y * probeSize + probe.x;
-  uint rayCount = probeSize * probeSize;
-  float rayAngle = float(rayIdx) / rayCount * TAU;
-  vec2 rayDir = vec2(cos(rayAngle), sin(rayAngle));
+  vec3 color = vec3(0.f);
 
-  float cascadeRes4 = pow(4, u_cascadeIdx);
-  float origin = (u_interval0 * (1.f - cascadeRes4)) / (1.f - 4.f);
-  float rayLength = u_interval0 * cascadeRes4;
+  for (uint i = 0; i < 4; i++) {
+    uint cascadeRes = uint(pow(2, u_cascadeIdx + i));
+    uint probeSize = uint(texSize / cascadeRes);
+    uvec2 probe = uvec2(gl_FragCoord.xy) % probeSize;
+    uint rayIdx = probe.y * probeSize + probe.x;
+    uint rayCount = probeSize * probeSize;
+    float rayAngle = float(rayIdx) / rayCount * TAU;
+    vec2 rayDir = vec2(cos(rayAngle), sin(rayAngle));
 
-  vec3 light = rayMarch(gl_FragCoord.xy / texSize, rayDir, rayLength);
+    float cascadeRes4 = pow(4, u_cascadeIdx + i);
+    float origin = (u_interval0 * (1.f - cascadeRes4)) / (1.f - 4.f);
+    float rayLength = u_interval0 * cascadeRes4;
 
-  vec3 color = light;
+    vec3 light = rayMarch(uv, rayDir, rayLength);
+    color += light / (i + 1);
+  }
 
-  // temp
-  color = texture(u_shapesTexture, uv).rgb * float(u_cascadeIdx == 0) + color;
-  color = vec3(texture(u_sdfTexture, uv).r) * float(u_cascadeIdx == 1) + color;
+  // test textures
+  // color = vec3(texture(u_rcTexture, vec3(uv, u_cascadeIdx)).rg, 0.f) * float(u_cascadeIdx == 0) + color;
+  // color = texture(u_shapesTexture, uv).rgb * float(u_cascadeIdx == 1) + color;
+  // color = vec3(texture(u_sdfTexture, uv).r) * float(u_cascadeIdx == 2) + color;
 
   FragColor = vec4(color, 1.f);
 }
