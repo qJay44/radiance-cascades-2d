@@ -92,9 +92,10 @@ int main() {
     size_t frameIdx = 1;
   } avg;
 
+  rc::config.calcCascadeCount();
+
   // ----- Shaders --------------------------------------------- //
 
-  Shader shaderGenerateRC("generateRC.comp");
   Shader shaderScreen("shape2D.vert", "screen.frag");
   Shader shaderShape2D("shape2D.vert", "shape2D.frag");
 
@@ -115,6 +116,8 @@ int main() {
 
   shaderScreen.setUniformTexture("u_sdfTexture", sdfTexture.getUnit());
   shaderScreen.setUniformTexture("u_shapesTexture", shapesTexture.getUnit());
+
+  gui::shapeContainer = &shapeContainer;
 
   // Render loop
   while (!glfwWindowShouldClose(window)) {

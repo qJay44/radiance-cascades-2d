@@ -20,6 +20,8 @@ void InputsHandler::process(ShapeContainer& shapeContainer) {
   dvec2 mouse;
   glfwGetCursorPos(global::window, &mouse.x, &mouse.y);
 
+  shapeContainer.mouseFollowShape->setPosition(mouse);
+
   if (glfwGetMouseButton(global::window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS) {
     shapeContainer.moveShape(mouse, true);
   } else {

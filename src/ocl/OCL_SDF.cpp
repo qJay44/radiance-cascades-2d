@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cstring>
 #include <string>
+#include <vector>
 
 #include "utils/utils.hpp"
 
@@ -104,7 +105,7 @@ OCL_SDF::OCL_SDF(size_t width, size_t height, bool printInfo)
 
   cl_image_format format;
   format.image_channel_order = CL_R;
-  format.image_channel_data_type = CL_UNORM_INT8;
+  format.image_channel_data_type = CL_SNORM_INT8;
 
   cl_int gpuImageMallocResult;
   #ifdef CL_VERSION_1_2
@@ -161,7 +162,7 @@ OCL_SDF::~OCL_SDF() {
 }
 
 void OCL_SDF::updateCirclesBuffer(const std::vector<Circle2D>& circles) {
-  if (circles.size() != numCircles || gpuCircles == nullptr)
+  if (circles.size() != numCircles || !gpuCircles)
     createCirclesBuffer(circles.size());
 
   for (size_t i = 0; i < numCircles; i++) {
@@ -181,7 +182,7 @@ void OCL_SDF::updateCirclesBuffer(const std::vector<Circle2D>& circles) {
 }
 
 void OCL_SDF::updateRectsBuffer(const std::vector<Rectangle2D>& rects) {
-  if (rects.size() != numRects || gpuRectangles == nullptr)
+  if (rects.size() != numRects || !gpuRectangles)
     createRectsBuffer(rects.size());
 
   for (size_t i = 0; i < numRects; i++) {

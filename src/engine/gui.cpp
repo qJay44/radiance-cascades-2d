@@ -2,8 +2,11 @@
 
 #include "imgui.h"
 #include "../rc/Config.hpp"
+#include "utils/utils.hpp"
 
 static bool toggleWholeWindow = false;
+
+ShapeContainer* gui::shapeContainer = nullptr;
 
 void gui::toggle() {
   toggleWholeWindow = true;
@@ -21,18 +24,17 @@ void gui::draw() {
     toggleWholeWindow = false;
   }
 
-  ImGui::SliderFloat("Cascade0 interval", &rc::config.interval0, 1.f, 30.f);
+  if (ImGui::SliderFloat("Cascade0 interval", &rc::config.interval0, 1.f, 30.f))
+    rc::config.calcCascadeCount();
 
-  static int stepsPerRay = rc::config.stepsPerRay;
-  if (ImGui::SliderInt("Steps per ray", &stepsPerRay, 1, 256)) {
-    rc::config.stepsPerRay = static_cast<u8>(stepsPerRay);
-  }
+  ImGui::SliderFloat("Cascade0 spacing", &rc::config.linear0, 1.f, 30.f);
 
-  ImGui::Text("Epsilon: %f", rc::config.epsilon);
-  ImGui::SameLine();
-
+  ImGui::Text("Epsilon: %f", rc::config.epsilon); ImGui::SameLine();
   if (ImGui::ArrowButton("##left" , ImGuiDir_Left))  {rc::config.epsilon *= 0.1f;} ImGui::SameLine();
-  if (ImGui::ArrowButton("##right", ImGuiDir_Right)) {rc::config.epsilon *= 10.f;} ImGui::SameLine();
+  if (ImGui::ArrowButton("##right", ImGuiDir_Right)) {rc::config.epsilon *= 10.f;}
+
+  if (!shapeContainer)
+    error("[gui::draw] Didnt link ShapeContainer");
 
   ImGui::End();
 }

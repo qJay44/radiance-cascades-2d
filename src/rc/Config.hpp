@@ -6,10 +6,10 @@
 namespace rc {
 
 extern struct Config {
+  float linear0 = 1.f;
   float interval0 = 7.f;
   float epsilon = 1e-5f;
-  u8 stepsPerRay = 32;
-  u8 cascadeCount;
+  u8 cascadeCount = 0;
 
   void calcCascadeCount() {
     vec2 winSize = getWinSize(global::window);
@@ -21,15 +21,13 @@ extern struct Config {
   }
 
   void update(const Shader& shader) {
-    static float prevInterval0 = interval0 + 1.f;
+    vec2 winSize = getWinSize(global::window);
 
-    if (interval0 != prevInterval0) {
-      calcCascadeCount();
-      shader.setUniform1f("u_interval0", interval0);
-      shader.setUniform1ui("u_cascadeCount", cascadeCount);
-    }
-
-    shader.setUniform1ui("u_stepsPerRay", stepsPerRay);
+    shader.setUniform2f("u_resolution", winSize);
+    shader.setUniform2f("u_cascadeSize", winSize / interval0);
+    shader.setUniform1ui("u_cascadeCount", cascadeCount);
+    shader.setUniform1f("u_linear0", linear0);
+    shader.setUniform1f("u_interval0", interval0);
     shader.setUniform1f("u_epsilon", epsilon);
   }
 

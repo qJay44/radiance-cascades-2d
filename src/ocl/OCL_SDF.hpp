@@ -3,6 +3,7 @@
 #include "CL/cl.h"
 #include "../engine/shapes/Rectangle2D.hpp"
 #include "../engine/shapes/Circle2D.hpp"
+#include "../ShapeContainer.hpp"
 #include "utils/types.hpp"
 
 class OCL_SDF {

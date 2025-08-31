@@ -10,13 +10,17 @@
 struct ShapeContainer {
   std::vector<Circle2D> circles;
   std::vector<Rectangle2D> rects;
+  Circle2D* mouseFollowShape = nullptr;
   Shape2D* grabbedShape = nullptr;
 
   ShapeContainer() {
-    ivec2 winSize = getWinSize(global::window);
+    // ivec2 winSize = getWinSize(global::window);
 
-    circles.push_back(Circle2D(90.f, winSize / 2, {1.f, 0.f, 1.f}));
-    rects.push_back(Rectangle2D({300.f, 100.f}, {500.f, 300.f}, randColor255Norm()));
+    // circles.push_back(Circle2D(90.f, winSize / 2, {1.f, 0.f, 1.f}));
+    // rects.push_back(Rectangle2D({300.f, 100.f}, {500.f, 300.f}, randColor255Norm()));
+
+    circles.push_back(Circle2D(20.f, {0.f, 0.f}, {1.f, 1.f, 0.f}));
+    mouseFollowShape = &circles.back();
   }
 
   void moveShape(vec2 mouse, bool hold) {

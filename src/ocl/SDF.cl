@@ -36,8 +36,7 @@ __kernel void calcSDF(
   float2 point = (float2)(x, y);
 
   float minDst = FLT_MAX;
-  float maxDst = width;
-  // float maxDst = length((float2)(width, height));
+  float maxDst = length((float2)(width, height));
 
   for (int i = 0; i < numCircles; i++) {
     Circle circle = circles[i];
