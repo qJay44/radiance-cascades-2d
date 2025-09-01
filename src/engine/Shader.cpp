@@ -69,14 +69,14 @@ void Shader::setUniform1ui(const std::string& name, const GLuint& v)    const { 
 void Shader::setUniform2i(const std::string& name, const ivec2& v)      const { setUniform2i(getUniformLoc(name), v); }
 void Shader::setUniformMatrix4f(const std::string& name, const mat4& m) const { setUniformMatrix4f(getUniformLoc(name), m); }
 
-void Shader::setUniformTexture(const GLint& loc, const GLuint& unit) const {
+void Shader::setUniformTexture(const GLint& loc, const Texture& texture) const {
   use();
-  glUniform1i(loc, unit);
+  glUniform1i(loc, texture.getUnit());
 }
 
-void Shader::setUniformTexture(const std::string& uniform, const GLuint& unit) const {
-  const GLint loc = getUniformLoc(uniform);
-  setUniformTexture(loc, unit);
+void Shader::setUniformTexture(const Texture& texture) const {
+  const GLint loc = getUniformLoc(texture.getUniformName());
+  setUniformTexture(loc, texture);
 }
 
 GLuint Shader::load(fspath path, int type) {

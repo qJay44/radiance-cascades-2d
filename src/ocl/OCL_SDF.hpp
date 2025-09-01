@@ -3,7 +3,6 @@
 #include "CL/cl.h"
 #include "../engine/shapes/Rectangle2D.hpp"
 #include "../engine/shapes/Circle2D.hpp"
-#include "../ShapeContainer.hpp"
 #include "utils/types.hpp"
 
 class OCL_SDF {
@@ -17,12 +16,12 @@ public:
   void run();
 
   [[nodiscard]]
-  const u8* getPixels() const;
+  const s16* getPixels() const;
 
 private:
   const size_t width, height;
   const size_t imageSize;
-  u8* sdfPixels = nullptr;
+  s16* sdfPixels = nullptr;
 
   struct CircleCL {
     cl_float2 center;

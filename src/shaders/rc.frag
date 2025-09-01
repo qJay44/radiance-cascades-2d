@@ -11,7 +11,7 @@ out vec4 FragColor;
 
 in vec2 texCoord;
 
-uniform sampler2D u_shapesTexture;
+uniform sampler2D u_sceneTexture;
 uniform sampler2D u_sdfTexture;
 uniform vec2 u_resolution;
 uniform vec2 u_cascadeSize;  // (u_resolution / u_linear0)
@@ -44,7 +44,7 @@ ProbeInfo cascadeTexelInfo(ivec2 coord, uint cascadeIdx) {
   info.linear = vec2(u_linear0 * angular);
   info.size = uvec2(u_cascadeSize) / angular;
   info.probe = coord % info.size;
-  info.rayPos = floor(texCoord * angular); // Try UV?
+  info.rayPos = floor(texCoord * angular);
   info.index = info.rayPos.x + (angular * info.rayPos.y);
   info.offset = (u_interval0 * (1.f - pow(4, cascadeIdx))) / (1.f - 4.f);
   info.range = u_interval0 * pow(4, cascadeIdx);
@@ -56,7 +56,7 @@ ProbeInfo cascadeTexelInfo(ivec2 coord, uint cascadeIdx) {
 
 // Returns color with aplha value representing the visibility term of the hit
 vec4 rayMarch(vec2 p, float theta, ProbeInfo probeInfo) {
-  vec2 dir = vec2(cos(theta), sin(theta));
+  vec2 dir = vec2(cos(theta), -sin(theta));
   vec2 origin = (p + dir * probeInfo.offset) * uvStep;
 
   for (float i = 0.f, rayDist = 0.f; i < probeInfo.range; i++) {
@@ -67,8 +67,8 @@ vec4 rayMarch(vec2 p, float theta, ProbeInfo probeInfo) {
     // (top-left with bottom-right or top-right with bottom-left) so its the length of the screen's diagonal.
     rayDist += sdf * probeInfo.scale;
 
-    // Move towards [dir] by [rayDist] amount, converting to UV range with [uvStep]
-    origin += dir * rayDist * uvStep;
+    // Move towards [dir] by scaled [sdf] amount, converting to UV range with [uvStep]
+    origin += dir * sdf * probeInfo.scale * uvStep;
 
     // If ray goes off probe's range or off screen edges, return no-hit
     if (rayDist >= probeInfo.range || floor(origin) != vec2(0.f)) break;
@@ -79,7 +79,7 @@ vec4 rayMarch(vec2 p, float theta, ProbeInfo probeInfo) {
     if (sdf <= u_epsilon && rayDist <= u_epsilon && probeInfo.cascadeIdx != 0) return vec4(0.f);
 
     // The [origin] hit something, return radiance from scene with visibility term of 0, e.g no visibility to merge with higher cascades
-    if (sdf <= u_epsilon) return vec4(texture(u_shapesTexture, origin).rgb, 0.f);
+    if (sdf <= u_epsilon) return vec4(texture(u_sceneTexture, origin).rgb, 0.f);
   }
 
   // No-hit, with visibility term of 1, to merge with higher cascades
@@ -101,14 +101,12 @@ vec4 merge(vec4 rayInfo, float idx, ProbeInfo probeInfo) {
   vec2 interpUVN1 = probeInfo.probe * 0.5f;
   vec2 clampedUVN1 = max(vec2(1.f), min(interpUVN1, sizeN1 - 1.f));
   vec2 probeUVN1 = probeN1 + clampedUVN1 + 0.25f;
-  vec4 interpolated = texture(u_shapesTexture, probeUVN1 * (1.f / u_cascadeSize));
+  vec4 interpolated = texture(u_sceneTexture, probeUVN1 * (1.f / u_cascadeSize));
 
   return rayInfo + interpolated;
 }
 
 void main() {
-  FragColor = vec4(0.f);
-
   for (uint i = 0; i < u_cascadeCount; i++) {
     ProbeInfo probeInfo = cascadeTexelInfo(ivec2(gl_FragCoord.xy), i);
     vec2 origin = (probeInfo.probe + 0.5f) * probeInfo.linear;
@@ -118,7 +116,7 @@ void main() {
     // Cast 4 rays, one for each angular index for this pre-averaged ray
     for (uint j = 0; j < 4; j++) {
       // Actual index
-      float idx = preAvgIdx + j;
+      float idx = preAvgIdx + float(j);
       // Actual angle
       float theta = (idx + 0.5f) * thetaScalar;
       vec4 rayInfo = rayMarch(origin, theta, probeInfo);

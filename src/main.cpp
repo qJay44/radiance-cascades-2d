@@ -1,6 +1,7 @@
 #include <cstddef>
 #include <cstdio>
 #include <direct.h>
+#include <x86intrin.h>
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -96,7 +97,7 @@ int main() {
 
   // ----- Shaders --------------------------------------------- //
 
-  Shader shaderScreen("shape2D.vert", "screen.frag");
+  Shader shaderRC("shape2D.vert", "rc.frag");
   Shader shaderShape2D("shape2D.vert", "shape2D.frag");
 
   // ----- OpenCL SDF ------------------------------------------ //
@@ -104,18 +105,18 @@ int main() {
   Rectangle2D screenRect(winSize, winSize / 2);
   ShapeContainer shapeContainer;
   OCL_SDF ocl(winSize.x, winSize.y);
-  Texture2D sdfTexture({"u_sdfTexture", 0, GL_TEXTURE_2D, GL_R8, GL_RED}, winSize);
+  Texture2D sdfTexture({"u_sdfTexture", 0, GL_TEXTURE_2D, GL_R16F, GL_RED, GL_SHORT}, winSize);
 
   // ----- Framebuffers ---------------------------------------- //
 
   FBO fboShapes(1);
-  Texture2D shapesTexture({"u_shapesTexture", 1}, winSize);
-  fboShapes.attach2D(GL_COLOR_ATTACHMENT0, shapesTexture);
+  Texture2D sceneTexture({"u_sceneTexture", 1}, winSize);
+  fboShapes.attach2D(GL_COLOR_ATTACHMENT0, sceneTexture);
 
   // ----------------------------------------------------------- //
 
-  shaderScreen.setUniformTexture("u_sdfTexture", sdfTexture.getUnit());
-  shaderScreen.setUniformTexture("u_shapesTexture", shapesTexture.getUnit());
+  shaderRC.setUniformTexture(sdfTexture);
+  shaderRC.setUniformTexture(sceneTexture);
 
   gui::shapeContainer = &shapeContainer;
 
@@ -156,12 +157,14 @@ int main() {
 
     InputsHandler::process(shapeContainer);
 
-    rc::config.update(shaderScreen);
+    rc::config.update(shaderRC);
 
     ocl.updateCirclesBuffer(shapeContainer.circles);
     ocl.updateRectsBuffer(shapeContainer.rects);
     ocl.run();
     sdfTexture.update(ocl.getPixels());
+
+    // ----- Draw shapes ----------------------------------------- //
 
     fboShapes.bind();
     glClearColor(0.f, 0.f, 0.f, 1.f);
@@ -169,21 +172,25 @@ int main() {
 
     shapeContainer.draw(shaderShape2D);
 
+    // ----- Draw to main screen --------------------------------- //
+
     FBO::unbind();
     glClearColor(0.f, 0.f, 0.f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    shapesTexture.bind();
     sdfTexture.bind();
+    sceneTexture.bind();
 
-    screenRect.draw(shaderScreen);
+    screenRect.draw(shaderRC);
 
-    shapesTexture.unbind();
     sdfTexture.unbind();
+    sceneTexture.unbind();
 
     gui::draw();
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+    // ----------------------------------------------------------- //
 
     glfwSwapBuffers(window);
     glfwPollEvents();
