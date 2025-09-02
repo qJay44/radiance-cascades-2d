@@ -2,7 +2,8 @@
 
 struct TextureDescriptor {
   std::string uniformName;
-  GLuint unit;
+  uvec2 size;
+  GLuint unit = 0;
   GLenum target         = GL_TEXTURE_2D;
   GLenum internalFormat = GL_RGB8;          // Color format in the OpenGL
   GLenum format         = GL_RGB;           // Color format of the loaded image

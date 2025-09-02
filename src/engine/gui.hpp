@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../ShapeContainer.hpp"
+#include "../RenderConfig.hpp"
 
 struct gui {
-  static ShapeContainer* shapeContainer;
+  static RenderConfig* renderConfig;
 
   static void toggle();
   static void draw();

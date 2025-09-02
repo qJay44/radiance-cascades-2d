@@ -7,6 +7,7 @@
 
 class Circle2D final : public Shape2D {
 public:
+  Circle2D();
   Circle2D(float radius, vec2 pos, vec3 color = vec3(0.f), size_t points = 50);
 
   bool contains(vec2 mouse) const override;

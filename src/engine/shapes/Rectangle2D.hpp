@@ -6,6 +6,7 @@
 
 class Rectangle2D final : public Shape2D {
 public:
+  Rectangle2D();
   Rectangle2D(vec2 size, vec2 pos = vec2(0.f), vec3 color = vec3(0.f));
 
   bool contains(vec2 mouse) const override;

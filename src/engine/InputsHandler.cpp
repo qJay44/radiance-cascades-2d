@@ -2,6 +2,7 @@
 
 #include "GLFW/glfw3.h"
 #include "gui.hpp"
+#include <cassert>
 
 void InputsHandler::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
   switch (key) {

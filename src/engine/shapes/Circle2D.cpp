@@ -2,6 +2,8 @@
 #include "utils/utils.hpp"
 #include "glm/ext/matrix_transform.hpp"
 
+Circle2D::Circle2D() {}
+
 Circle2D::Circle2D(float radius, vec2 pos, vec3 color, size_t points)
   : radius(radius) {
 

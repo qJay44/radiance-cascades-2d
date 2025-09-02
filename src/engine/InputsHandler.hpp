@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../ShapeContainer.hpp"
+#include "../RenderConfig.hpp"
 
 struct InputsHandler {
   InputsHandler() = delete;

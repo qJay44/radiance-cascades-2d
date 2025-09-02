@@ -25,7 +25,11 @@ const GLuint& Texture::getId() const {
   return id;
 }
 
-uvec2 Texture::getSize() const {
+const uvec2& Texture::getSize() const {
+  return desc.size;
+}
+
+uvec2 Texture::getSizeNative() const {
   ivec2 size;
 
   bind();

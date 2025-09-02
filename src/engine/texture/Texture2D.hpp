@@ -2,22 +2,37 @@
 
 #include "Texture.hpp"
 #include "utils/utils.hpp"
+#include <cassert>
 
 class Texture2D : public Texture {
 public:
-  Texture2D(const TextureDescriptor& desc, ivec2 size, const u8* pixels = nullptr) : Texture(desc) {
+  Texture2D() {};
+
+  template<typename T = u8>
+  Texture2D(const TextureDescriptor& desc, const T* pixels = nullptr) : Texture(desc) {
     if (desc.target != GL_TEXTURE_2D)
       error("[Texture2D] Got unexpected texture target ({})", desc.target);
 
-    glTexImage2D(desc.target, 0, desc.internalFormat, size.x, size.y, 0, desc.format, desc.type, pixels);
+    if (pixels)
+      checkPacking(pixels);
+
+    glTexImage2D(desc.target, 0, desc.internalFormat, desc.size.x, desc.size.y, 0, desc.format, desc.type, pixels);
     unbind();
   }
 
   template<typename T>
   void update(const T* pixels) {
-    uvec2 size = getSize();
+    assert(pixels != nullptr);
+
+    [[maybe_unused]]
+    uvec2 sizeNative = getSizeNative();
+    assert(sizeNative.x == desc.size.x);
+    assert(sizeNative.y == desc.size.y);
+
+    checkPacking(pixels);
+
     bind();
-    glTexSubImage2D(desc.target, 0, 0, 0, size.x, size.y, desc.format, desc.type, pixels);
+    glTexSubImage2D(desc.target, 0, 0, 0, desc.size.x, desc.size.y, desc.format, desc.type, pixels);
     unbind();
   }
 

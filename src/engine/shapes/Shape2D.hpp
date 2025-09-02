@@ -7,8 +7,8 @@
 
 class Shape2D {
 public:
-  virtual bool contains(vec2 mouse) const;
-  virtual void setPosition(vec2 pos);
+  virtual bool contains(vec2 mouse) const = 0;
+  virtual void setPosition(vec2 pos) = 0;
 
   vec2 getPosition() const;
 

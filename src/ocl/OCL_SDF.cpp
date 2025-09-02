@@ -26,8 +26,7 @@ const char* const attributeNames[ATTRIBUTE_COUNT] = {
   "CL_PLATFORM_EXTENSIONS"
 };
 
-OCL_SDF::OCL_SDF(size_t width, size_t height, bool printInfo)
-  : width(width), height(height), imageSize(width * height), sdfPixels(new s16[width * height]){
+OCL_SDF::OCL_SDF(bool printInfo) {
   cl_platform_id platforms[64];
   cl_uint platformCount;
 
@@ -103,23 +102,6 @@ OCL_SDF::OCL_SDF(size_t width, size_t height, bool printInfo)
   commandQueue = clCreateCommandQueueWithProperties(context, device, 0, &commandQueueResult);
   assert(commandQueueResult == CL_SUCCESS);
 
-  cl_image_format format;
-  format.image_channel_order = CL_R;
-  format.image_channel_data_type = CL_SNORM_INT16;
-
-  cl_int gpuImageMallocResult;
-  #ifdef CL_VERSION_1_2
-    cl_image_desc imageDesc;
-    memset(&imageDesc, 0, sizeof(imageDesc));
-    imageDesc.image_type = CL_MEM_OBJECT_IMAGE2D;
-    imageDesc.image_width = width;
-    imageDesc.image_height = height;
-    gpuImage = clCreateImage(context, CL_MEM_WRITE_ONLY, &format, &imageDesc, nullptr, &gpuImageMallocResult);
-  #else
-    gpuImage = clCreateImage2D(context, CL_MEM_WRITE_ONLY, &format, width, height, 0, nullptr, &gpuImageMallocResult);
-  #endif
-  assert(gpuImageMallocResult == CL_SUCCESS);
-
   cl_int programResult;
   std::string clFile = readFile("ocl/SDF.cl");
   const char* programSource = clFile.c_str();
@@ -139,19 +121,15 @@ OCL_SDF::OCL_SDF(size_t width, size_t height, bool printInfo)
   cl_int kernelResult;
   kernel = clCreateKernel(program, "calcSDF", &kernelResult);
   assert(kernelResult == CL_SUCCESS);
-
-  [[maybe_unused]]
-  cl_int kernelArgResult = clSetKernelArg(kernel, 0, sizeof(cl_mem), &gpuImage);
-  assert(kernelArgResult == CL_SUCCESS);
 }
 
 OCL_SDF::~OCL_SDF() {
   if (sdfPixels) delete[] sdfPixels;
-  clearHostCicles();
+  clearHostCircles();
   clearHostRectangles();
 
   if (gpuImage) clReleaseMemObject(gpuImage);
-  clearGpuCicles();
+  clearGpuCircles();
   clearGpuRectangles();
 
 	clReleaseKernel(kernel);
@@ -161,7 +139,44 @@ OCL_SDF::~OCL_SDF() {
 	clReleaseDevice(device);
 }
 
+void OCL_SDF::updateImage(uvec2 size) {
+  this->size = size;
+
+  if (sdfPixels) delete[] sdfPixels;
+  if (gpuImage) clReleaseMemObject(gpuImage);
+
+  sdfPixels = new s16[size.x * size.y];
+
+  cl_image_format format;
+  format.image_channel_order = CL_R;
+  format.image_channel_data_type = CL_SNORM_INT16;
+
+  cl_int gpuImageMallocResult;
+  #ifdef CL_VERSION_1_2
+    cl_image_desc imageDesc;
+    memset(&imageDesc, 0, sizeof(imageDesc));
+    imageDesc.image_type = CL_MEM_OBJECT_IMAGE2D;
+    imageDesc.image_width = size.x;
+    imageDesc.image_height = size.y;
+    gpuImage = clCreateImage(context, CL_MEM_WRITE_ONLY, &format, &imageDesc, nullptr, &gpuImageMallocResult);
+  #else
+    gpuImage = clCreateImage2D(context, CL_MEM_WRITE_ONLY, &format, size.x, size.y, 0, nullptr, &gpuImageMallocResult);
+  #endif
+  assert(gpuImageMallocResult == CL_SUCCESS);
+
+  [[maybe_unused]]
+  cl_int kernelArgResult = clSetKernelArg(kernel, 0, sizeof(cl_mem), &gpuImage);
+  assert(kernelArgResult == CL_SUCCESS);
+}
+
 void OCL_SDF::updateCirclesBuffer(const std::vector<Circle2D>& circles) {
+  if (circles.size() == 0) {
+    clearHostCircles();
+    clearGpuCircles();
+    numCircles = 0;
+    return;
+  }
+
   if (circles.size() != numCircles || !gpuCircles)
     createCirclesBuffer(circles.size());
 
@@ -182,6 +197,13 @@ void OCL_SDF::updateCirclesBuffer(const std::vector<Circle2D>& circles) {
 }
 
 void OCL_SDF::updateRectsBuffer(const std::vector<Rectangle2D>& rects) {
+  if (rects.size() == 0) {
+    clearHostRectangles();
+    clearGpuRectangles();
+    numRects = 0;
+    return;
+  }
+
   if (rects.size() != numRects || !gpuRectangles)
     createRectsBuffer(rects.size());
 
@@ -206,19 +228,19 @@ void OCL_SDF::updateRectsBuffer(const std::vector<Rectangle2D>& rects) {
 
 void OCL_SDF::run() {
   constexpr size_t origin[3] = {0, 0, 0};
-  const size_t region[3] = {width, height, 1};
+  const size_t region[3] = {size.x, size.y, 1};
 
-  const size_t globalWorkSize[2] = {width, height};
+  const size_t globalWorkSize[2] = {size.x, size.y};
   const size_t localWorkSize[2] = {16, 16};
 
   [[maybe_unused]]
   cl_int errCode;
 
-  errCode = clSetKernelArg(kernel, 1, sizeof(cl_mem), &gpuCircles); assert(errCode == CL_SUCCESS);
+  errCode = clSetKernelArg(kernel, 1, sizeof(cl_mem), &gpuCircles);  assert(errCode == CL_SUCCESS);
   errCode = clSetKernelArg(kernel, 2, sizeof(cl_uint), &numCircles); assert(errCode == CL_SUCCESS);
 
   errCode = clSetKernelArg(kernel, 3, sizeof(cl_mem), &gpuRectangles); assert(errCode == CL_SUCCESS);
-  errCode = clSetKernelArg(kernel, 4, sizeof(cl_uint), &numRects);      assert(errCode == CL_SUCCESS);
+  errCode = clSetKernelArg(kernel, 4, sizeof(cl_uint), &numRects);     assert(errCode == CL_SUCCESS);
 
   errCode = clEnqueueNDRangeKernel(commandQueue, kernel, 2, nullptr, globalWorkSize, localWorkSize, 0, nullptr, nullptr); assert(errCode == CL_SUCCESS);
   errCode = clEnqueueReadImage(commandQueue, gpuImage, CL_TRUE, origin, region, 0, 0, sdfPixels, 0, nullptr, nullptr);    assert(errCode == CL_SUCCESS);
@@ -231,15 +253,15 @@ const s16* OCL_SDF::getPixels() const {
 }
 
 void OCL_SDF::createCirclesBuffer(int count) {
-  clearHostCicles();
-  clearGpuCicles();
+  clearHostCircles();
+  clearGpuCircles();
 
   numCircles = count;
   hostCircles = new CircleCL[numCircles];
 
-  cl_int gpuMallocResult;
-  gpuCircles = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(CircleCL) * numCircles, nullptr, &gpuMallocResult);
-  assert(gpuMallocResult == CL_SUCCESS);
+  cl_int gpuCiclesMallocResult;
+  gpuCircles = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(CircleCL) * numCircles, nullptr, &gpuCiclesMallocResult);
+  assert(gpuCiclesMallocResult == CL_SUCCESS);
 }
 
 void OCL_SDF::createRectsBuffer(int count) {
@@ -249,14 +271,14 @@ void OCL_SDF::createRectsBuffer(int count) {
   numRects = count;
   hostRectangles = new RectangleCL[numRects];
 
-  cl_int gpuMallocResult;
-  gpuRectangles = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(RectangleCL) * numRects, nullptr, &gpuMallocResult);
-  assert(gpuMallocResult == CL_SUCCESS);
+  cl_int gpuRectsMalloc;
+  gpuRectangles = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(RectangleCL) * numRects, nullptr, &gpuRectsMalloc);
+  assert(gpuRectsMalloc == CL_SUCCESS);
 }
 
-void OCL_SDF::clearHostCicles()     { if (hostCircles)    delete[] hostCircles;    }
+void OCL_SDF::clearHostCircles()    { if (hostCircles)    delete[] hostCircles;    }
 void OCL_SDF::clearHostRectangles() { if (hostRectangles) delete[] hostRectangles; }
 
-void OCL_SDF::clearGpuCicles()      { if (gpuCircles)    clReleaseMemObject(gpuCircles);    }
+void OCL_SDF::clearGpuCircles()     { if (gpuCircles)    clReleaseMemObject(gpuCircles);    }
 void OCL_SDF::clearGpuRectangles()  { if (gpuRectangles) clReleaseMemObject(gpuRectangles); }
 

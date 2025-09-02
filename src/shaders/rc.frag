@@ -108,7 +108,7 @@ vec4 merge(vec4 rayInfo, float idx, ProbeInfo probeInfo) {
 
 void main() {
   for (uint i = 0; i < u_cascadeCount; i++) {
-    ProbeInfo probeInfo = cascadeTexelInfo(ivec2(gl_FragCoord.xy), i);
+    ProbeInfo probeInfo = cascadeTexelInfo(ivec2(texCoord * u_resolution), i);
     vec2 origin = (probeInfo.probe + 0.5f) * probeInfo.linear;
     float preAvgIdx = probeInfo.index * 4.f; // 4x rays cast but averaged to 1x
     float thetaScalar = TAU / (probeInfo.angular * 4.f);

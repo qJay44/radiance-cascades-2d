@@ -1,8 +1,12 @@
+#include <cassert>
 #include <cstddef>
 #include <cstdio>
 #include <direct.h>
 #include <x86intrin.h>
 
+#include "GLFW/glfw3.h"
+#include "RenderConfig.hpp"
+#include "global.hpp"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -10,15 +14,12 @@
 #include "utils/clrp.hpp"
 #include "engine/InputsHandler.hpp"
 #include "engine/gui.hpp"
-#include "engine/shapes/Rectangle2D.hpp"
-#include "engine/Shader.hpp"
-#include "engine/FBO.hpp"
-#include "engine/texture/Texture2D.hpp"
-#include "ShapeContainer.hpp"
 #include "rc/Config.hpp"
-#include "ocl/OCL_SDF.hpp"
 
 using global::window;
+
+static RenderConfig* renderConfig = nullptr;
+static bool needRecalcRenderConfig = false;
 
 void GLAPIENTRY MessageCallback(
   GLenum source,
@@ -41,6 +42,11 @@ void GLAPIENTRY MessageCallback(
   exit(1);
 }
 
+void winResizeCallback(GLFWwindow* window, int w, int h) {
+  glViewport(0, 0, w, h);
+  needRecalcRenderConfig = true;
+}
+
 int main() {
   // Assuming the executable is launching from its own directory
   _chdir("../../../src");
@@ -53,7 +59,7 @@ int main() {
   glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
   // Window init
-  window = glfwCreateWindow(1024, 1024, "Title", NULL, NULL);
+  window = glfwCreateWindow(1200, 900, "Title", NULL, NULL);
   ivec2 winSize;
   glfwGetWindowSize(window, &winSize.x, &winSize.y);
 
@@ -64,6 +70,7 @@ int main() {
   }
   glfwMakeContextCurrent(window);
   glfwSetKeyCallback(window, InputsHandler::keyCallback);
+  glfwSetWindowSizeCallback(global::window, winResizeCallback);
   // glfwSetScrollCallback(window, InputsHandler::scrollCallback);
   // glfwSetMouseButtonCallback(window, InputsHandler::mouseButtonCallback);
 
@@ -93,32 +100,10 @@ int main() {
     size_t frameIdx = 1;
   } avg;
 
-  rc::config.calcCascadeCount();
+  renderConfig = new RenderConfig();
+  renderConfig->init();
 
-  // ----- Shaders --------------------------------------------- //
-
-  Shader shaderRC("shape2D.vert", "rc.frag");
-  Shader shaderShape2D("shape2D.vert", "shape2D.frag");
-
-  // ----- OpenCL SDF ------------------------------------------ //
-
-  Rectangle2D screenRect(winSize, winSize / 2);
-  ShapeContainer shapeContainer;
-  OCL_SDF ocl(winSize.x, winSize.y);
-  Texture2D sdfTexture({"u_sdfTexture", 0, GL_TEXTURE_2D, GL_R16F, GL_RED, GL_SHORT}, winSize);
-
-  // ----- Framebuffers ---------------------------------------- //
-
-  FBO fboShapes(1);
-  Texture2D sceneTexture({"u_sceneTexture", 1}, winSize);
-  fboShapes.attach2D(GL_COLOR_ATTACHMENT0, sceneTexture);
-
-  // ----------------------------------------------------------- //
-
-  shaderRC.setUniformTexture(sdfTexture);
-  shaderRC.setUniformTexture(sceneTexture);
-
-  gui::shapeContainer = &shapeContainer;
+  gui::renderConfig = renderConfig;
 
   // Render loop
   while (!glfwWindowShouldClose(window)) {
@@ -155,36 +140,25 @@ int main() {
       glfwSetWindowTitle(window, std::format("FPS: {} / {:.2f} ms", avg.fps, avg.ms).c_str());
     }
 
-    InputsHandler::process(shapeContainer);
+    if (needRecalcRenderConfig) {
+      renderConfig->init();
+      needRecalcRenderConfig = false;
+    }
 
-    rc::config.update(shaderRC);
+    // ----- Updates --------------------------------------------- //
 
-    ocl.updateCirclesBuffer(shapeContainer.circles);
-    ocl.updateRectsBuffer(shapeContainer.rects);
-    ocl.run();
-    sdfTexture.update(ocl.getPixels());
+    InputsHandler::process(renderConfig->shapeContainer);
+
+    rc::config.update(renderConfig->shaderRC);
+    renderConfig->update();
 
     // ----- Draw shapes ----------------------------------------- //
 
-    fboShapes.bind();
-    glClearColor(0.f, 0.f, 0.f, 1.f);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    shapeContainer.draw(shaderShape2D);
+    renderConfig->drawToShapesFBO();
 
     // ----- Draw to main screen --------------------------------- //
 
-    FBO::unbind();
-    glClearColor(0.f, 0.f, 0.f, 1.f);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    sdfTexture.bind();
-    sceneTexture.bind();
-
-    screenRect.draw(shaderRC);
-
-    sdfTexture.unbind();
-    sceneTexture.unbind();
+    renderConfig->drawToScreen();
 
     gui::draw();
     ImGui::Render();

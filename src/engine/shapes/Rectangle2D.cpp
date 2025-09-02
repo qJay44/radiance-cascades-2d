@@ -39,6 +39,11 @@ void Rectangle2D::initVO() {
   allocatedVO = true;
 }
 
+Rectangle2D::Rectangle2D() {
+  if (!allocatedVO)
+    initVO();
+}
+
 Rectangle2D::Rectangle2D(vec2 size, vec2 pos, vec3 color)
   : size(size) {
   translate(vec2(-0.5f, 0.5f));

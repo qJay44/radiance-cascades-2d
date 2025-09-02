@@ -1,3 +1,5 @@
+#pragma once
+
 #include <vector>
 
 #include "CL/cl.h"
@@ -7,9 +9,10 @@
 
 class OCL_SDF {
 public:
-  OCL_SDF(size_t width, size_t height, bool printInfo = false);
+  OCL_SDF(bool printInfo = false);
   ~OCL_SDF();
 
+  void updateImage(uvec2 size);
   void updateCirclesBuffer(const std::vector<Circle2D>& circles);
   void updateRectsBuffer(const std::vector<Rectangle2D>& rects);
 
@@ -19,8 +22,7 @@ public:
   const s16* getPixels() const;
 
 private:
-  const size_t width, height;
-  const size_t imageSize;
+  uvec2 size;
   s16* sdfPixels = nullptr;
 
   struct CircleCL {
@@ -57,10 +59,10 @@ private:
   void createCirclesBuffer(int count);
   void createRectsBuffer(int count);
 
-  void clearHostCicles();
+  void clearHostCircles();
   void clearHostRectangles();
 
-  void clearGpuCicles();
+  void clearGpuCircles();
   void clearGpuRectangles();
 };
 
