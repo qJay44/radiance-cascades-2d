@@ -11,6 +11,12 @@ struct VAO {
     glGenVertexArrays(size, &id);
   }
 
+  void operator=(VAO rhs) {
+    clear();
+    id = rhs.id;
+    size = rhs.size;
+  }
+
   static void unbind() { glBindVertexArray(0); }
 
   void bind()   const { glBindVertexArray(id); }

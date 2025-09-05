@@ -14,7 +14,7 @@ public:
       error("[Texture2D] Got unexpected texture target ({})", desc.target);
 
     if (pixels)
-      checkPacking(pixels);
+      checkPacking<T>();
 
     glTexImage2D(desc.target, 0, desc.internalFormat, desc.size.x, desc.size.y, 0, desc.format, desc.type, pixels);
     unbind();
@@ -29,7 +29,7 @@ public:
     assert(sizeNative.x == desc.size.x);
     assert(sizeNative.y == desc.size.y);
 
-    checkPacking(pixels);
+    checkPacking<T>();
 
     bind();
     glTexSubImage2D(desc.target, 0, 0, 0, desc.size.x, desc.size.y, desc.format, desc.type, pixels);

@@ -35,6 +35,7 @@ public:
   void setUniform2i(const std::string& name, const ivec2& v)      const;
   void setUniformMatrix4f(const std::string& name, const mat4& m) const;
 
+  void setUniformTexture(const std::string& name, GLuint unit) const;
   void setUniformTexture(const GLint& loc, const Texture& texture) const;
   void setUniformTexture(const Texture& texture) const;
 
@@ -45,6 +46,8 @@ private:
 private:
   static GLuint load(fspath path, int type);
   static GLuint compile(const fspath& path, int type);
-  static void link(GLuint program);
+  static bool link(GLuint program);
+
+  void printLinkError(const fspath& vsPath, const fspath& fsPath, const fspath& gsPath);
 };
 

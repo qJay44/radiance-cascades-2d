@@ -32,11 +32,15 @@ using glm::mat4;
 #include "defines.hpp"
 #include "global.hpp"
 
-#define IM_VEC2_CLASS_EXTRA                                                     \
-          constexpr ImVec2(const vec2& f) : x(f.x), y(f.y) {}                   \
-          operator vec2() const { return vec2(x,y); }
+#define IM_VEC2_CLASS_EXTRA                                             \
+  constexpr ImVec2(const vec2& f) : x(f.x), y(f.y) {}                   \
+  operator vec2() const { return vec2(x,y); }                           \
+                                                                        \
+  ImVec2 operator+(const ImVec2& rhs) const {                           \
+    return ImVec2(x + rhs.x, y + rhs.y);                                \
+  }
 
-#define IM_VEC3_CLASS_EXTRA                                                     \
-          constexpr ImVec3(const vec3& f) : x(f.x), y(f.y) {}                   \
-          operator vec3() const { return vec3(x,y); }
+#define IM_VEC3_CLASS_EXTRA                                             \
+  constexpr ImVec3(const vec3& f) : x(f.x), y(f.y) {}                   \
+  operator vec3() const { return vec3(x,y); }
 

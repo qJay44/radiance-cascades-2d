@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "Vertex2D.hpp"
+#include "../Vertex2D.hpp"
 #include "glm/ext/matrix_transform.hpp"
 #include "utils/utils.hpp"
 
@@ -45,17 +45,12 @@ Rectangle2D::Rectangle2D() {
 }
 
 Rectangle2D::Rectangle2D(vec2 size, vec2 pos, vec3 color)
-  : size(size) {
-  translate(vec2(-0.5f, 0.5f));
+  : size(size),
+    pos(pos),
+    color(color) {
 
   if (!allocatedVO)
     initVO();
-
-  mode = GL_TRIANGLES;
-  vertCount = vertices.size();
-  vao = vaoRect;
-  vbo = vboRect;
-  Shape2D::color = color;
 
   vec2 winSize = getWinSize(global::window);
   vec2 sizeNorm = size / winSize;
@@ -68,20 +63,33 @@ const vec2& Rectangle2D::getSize() const {
   return size;
 }
 
-bool Rectangle2D::contains(vec2 m) const {
-  vec2 p = getPosition() - size * 0.5f; // origin is top left now
-  const vec2& s = size;
-
-  return (
-    (m.x >= p.x && m.x <= p.x + s.x) &&
-    (m.y >= p.y && m.y <= p.y + s.y)
-  );
-}
-
 void Rectangle2D::setPosition(vec2 pos) {
   vec2 winSize = vec2(getWinSize(global::window));
   vec2 toTranslate = pos / winSize * 2.f - 1.f;
   toTranslate.y *= -1.f;
   matTrans = glm::translate(mat4(1.f), vec3(toTranslate, 0.f));
+}
+
+void Rectangle2D::translate(vec2 v) {
+  matTrans = glm::translate(matTrans, vec3(v, 0.f));
+}
+
+void Rectangle2D::rotate(float angleRad) {
+  matRot = glm::rotate(matRot, angleRad, vec3(0.f, 0.f, 1.f));
+}
+
+void Rectangle2D::scale(vec2 v) {
+  matScale = glm::scale(matScale, vec3(v, 1.f));
+}
+
+void Rectangle2D::draw(const Shader& shader) const {
+  vaoRect.bind();
+
+  shader.setUniformMatrix4f("u_model", matTrans * matRot * matScale);
+  shader.setUniform3f("u_shapeColor", color);
+
+  glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+
+  vaoRect.unbind();
 }
 

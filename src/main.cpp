@@ -2,19 +2,20 @@
 #include <cstddef>
 #include <cstdio>
 #include <direct.h>
-#include <x86intrin.h>
 
-#include "GLFW/glfw3.h"
-#include "RenderConfig.hpp"
-#include "global.hpp"
+#include "ProfilerManager.hpp"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
+#include "GLFW/glfw3.h"
+#include "RenderConfig.hpp"
+#include "engine/FBO.hpp"
+#include "global.hpp"
 #include "utils/clrp.hpp"
 #include "engine/InputsHandler.hpp"
-#include "engine/gui.hpp"
-#include "rc/Config.hpp"
+#include "gui.hpp"
+#include "utils/utils.hpp"
 
 using global::window;
 
@@ -71,8 +72,8 @@ int main() {
   glfwMakeContextCurrent(window);
   glfwSetKeyCallback(window, InputsHandler::keyCallback);
   glfwSetWindowSizeCallback(global::window, winResizeCallback);
-  // glfwSetScrollCallback(window, InputsHandler::scrollCallback);
   // glfwSetMouseButtonCallback(window, InputsHandler::mouseButtonCallback);
+  // glfwSetScrollCallback(window, InputsHandler::scrollCallback);
 
   // GLAD init
   if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
@@ -100,8 +101,10 @@ int main() {
     size_t frameIdx = 1;
   } avg;
 
-  renderConfig = new RenderConfig();
-  renderConfig->init();
+  ProfilerManager profilerManager(144);
+
+  renderConfig = new RenderConfig(&profilerManager);
+  renderConfig->init(winSize);
 
   gui::renderConfig = renderConfig;
 
@@ -141,24 +144,22 @@ int main() {
     }
 
     if (needRecalcRenderConfig) {
-      renderConfig->init();
+      renderConfig->init(getWinSize(global::window));
       needRecalcRenderConfig = false;
     }
 
     // ----- Updates --------------------------------------------- //
 
-    InputsHandler::process(renderConfig->shapeContainer);
+    InputsHandler::process(*renderConfig);
 
-    rc::config.update(renderConfig->shaderRC);
     renderConfig->update();
-
-    // ----- Draw shapes ----------------------------------------- //
-
-    renderConfig->drawToShapesFBO();
 
     // ----- Draw to main screen --------------------------------- //
 
-    renderConfig->drawToScreen();
+    FBO::unbind();
+    glClearColor(0.f, 0.f, 0.f, 0.f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    renderConfig->drawGI();
 
     gui::draw();
     ImGui::Render();

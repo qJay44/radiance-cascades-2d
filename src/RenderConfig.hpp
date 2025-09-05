@@ -1,81 +1,67 @@
 #pragma once
 
+#include "ProfilerManager.hpp"
 #include "engine/Shader.hpp"
-#include "engine/texture/Texture2D.hpp"
-#include "engine/FBO.hpp"
-#include "ShapeContainer.hpp"
-#include "global.hpp"
-#include "ocl/OCL_SDF.hpp"
-#include "rc/Config.hpp"
-#include "utils/utils.hpp"
+#include "engine/RenderTexture2D.hpp"
+#include "engine/shapes/Rectangle2D.hpp"
+#include "utils/types.hpp"
 
-struct RenderConfig {
-  Shader shaderRC = Shader("shape2D.vert", "rc.frag");
-  Shader shaderShape2D = Shader("shape2D.vert", "shape2D.frag");
-  OCL_SDF ocl;
-  FBO fboShapes = FBO(1);
+class RenderConfig {
+public:
+  RenderConfig(ProfilerManager* profilerManager);
+
+  void init(uvec2 winSize);
+  void addProfilier(ProfilerManager* pm);
+  void update();
+  void clearScene();
+  void drawGI();
+
+  void onMousePressed(const vec2& pos);
+  void onMouseReleased();
+  void onMouseMoved(const vec2& pos);
+
+private:
+  friend struct gui;
+
+  uvec2 winSize;
+
+  RenderTexture2D sceneTexture;
+  RenderTexture2D seedTexture;
+  RenderTexture2D sdfTexture;
+  RenderTexture2D pingJFA;
+  RenderTexture2D pongJFA;
+  RenderTexture2D* jfaTex = &pongJFA;
 
   Rectangle2D screenRect;
-  ShapeContainer shapeContainer;
-  Texture2D sdfTexture;
-  Texture2D sceneTexture;
 
-  RenderConfig() {};
+  Shader seedShader  = Shader("default2D.vert", "seed.frag");
+  Shader jfaShader   = Shader("default2D.vert", "jfa.frag");
+  Shader sdfShader   = Shader("default2D.vert", "sdf.frag");
+  Shader giShader    = Shader("default2D.vert", "gi.frag");
+  Shader tex2DShader = Shader("default2D.vert", "texture2D.frag");
 
-  void init() {
-    ivec2 winSize = getWinSize(global::window);
+  struct Mouse {
+    Shader shader = Shader("default2D.vert", "mouse.frag");
+    float drawRadius = 5.f;
+    vec3 drawColor{1.f, 0.f, 1.f};
+    vec2 prevPos;
+  } mouse;
 
-    ocl.updateImage(winSize);
-    screenRect = Rectangle2D(winSize, winSize / 2);
-    shapeContainer = ShapeContainer();
+  int raysPerPixel = 32;
+  int stepsPerRay = 32;
+  float epsilon = 0.001f;
+  int jfaPasses = 1;
 
-    sdfTexture.clear();
-    sceneTexture.clear();
-    sdfTexture = Texture2D({"u_sdfTexture", winSize, 0, GL_TEXTURE_2D, GL_R16F, GL_RED, GL_SHORT});
-    sceneTexture = Texture2D({"u_sceneTexture", winSize, 1});
+  bool isDrawing = false;
+  bool autoJfaPasses = true;
 
-    fboShapes.attach2D(GL_COLOR_ATTACHMENT0, sceneTexture);
+  ProfilerManager* profilerManager = nullptr;
 
-    shaderRC.setUniformTexture(sdfTexture);
-    shaderRC.setUniformTexture(sceneTexture);
-
-    rc::config.calcCascadeCount();
-  }
-
-  void update() {
-    ocl.updateCirclesBuffer(shapeContainer.circles);
-    ocl.updateRectsBuffer(shapeContainer.rects);
-    ocl.run();
-    sdfTexture.update(ocl.getPixels());
-  }
-
-  void bindTextures() const {
-    sdfTexture.bind();
-    sceneTexture.bind();
-  }
-
-  void unbindTextures() const {
-    sdfTexture.unbind();
-    sceneTexture.unbind();
-  }
-
-  void drawToShapesFBO() const {
-    fboShapes.bind();
-
-    glClearColor(0.f, 0.f, 0.f, 1.f);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    shapeContainer.draw(shaderShape2D);
-  }
-
-  void drawToScreen() const {
-    FBO::unbind();
-    glClearColor(0.f, 0.f, 0.f, 1.f);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    bindTextures();
-    screenRect.draw(shaderRC);
-    unbindTextures();
-  }
+private:
+  void calcPassesJFA();
+  void drawMouseAt(const vec2& point);
+  void drawSeed();
+  void drawJFA();
+  void drawSDF();
 };
 

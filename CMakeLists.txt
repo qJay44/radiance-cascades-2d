@@ -54,6 +54,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
   ${IMGUI_PATH}/include
   ${UTILS_PATH}/include
   ${OCL_PATH}/include
+  ${LEGIT_PROFILER_PATH}/include
 )
 
 target_link_directories(${PROJECT_NAME} PUBLIC

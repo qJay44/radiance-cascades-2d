@@ -12,6 +12,12 @@ struct FBO {
     glGenFramebuffers(size, &id);
   }
 
+  void operator=(FBO rhs) {
+    clear();
+    id = rhs.id;
+    size = rhs.size;
+  }
+
   static void unbind() { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
 
   void bind()   const { glBindFramebuffer(GL_FRAMEBUFFER, id); }

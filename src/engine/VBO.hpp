@@ -13,6 +13,12 @@ struct VBO {
     glBufferData(GL_ARRAY_BUFFER, dataSize, data, GL_STATIC_DRAW);
   }
 
+  void operator=(VBO rhs) {
+    clear();
+    id = rhs.id;
+    size = rhs.size;
+  }
+
   static void unbind() { glBindBuffer(GL_ARRAY_BUFFER, 0); }
 
   void bind()   const { glBindBuffer(GL_ARRAY_BUFFER, id); }

@@ -24,7 +24,8 @@ Shader::Shader(const fspath& vsPath, const fspath& fsPath, const fspath& gsPath)
   for (int i = 0; i < idx; i++)
     glAttachShader(program, shaders[i]);
 
-  link(program);
+  if (!link(program))
+    printLinkError(vsPath, fsPath, gsPath);
 
   for (int i = 0; i < idx; i++)
     glDeleteShader(shaders[i]);
@@ -34,7 +35,10 @@ Shader::Shader(const fspath& compPath) {
   program = glCreateProgram();
   GLuint shader = compile(compPath, GL_COMPUTE_SHADER);
   glAttachShader(program, shader);
-  link(program);
+
+  if (!link(program))
+    printLinkError(compPath, "", "");
+
   glDeleteShader(shader);
 }
 
@@ -68,6 +72,12 @@ void Shader::setUniform1i(const std::string& name, const GLint& v)      const { 
 void Shader::setUniform1ui(const std::string& name, const GLuint& v)    const { setUniform1ui(getUniformLoc(name), v); }
 void Shader::setUniform2i(const std::string& name, const ivec2& v)      const { setUniform2i(getUniformLoc(name), v); }
 void Shader::setUniformMatrix4f(const std::string& name, const mat4& m) const { setUniformMatrix4f(getUniformLoc(name), m); }
+
+void Shader::setUniformTexture(const std::string& name, GLuint unit) const {
+  use();
+  const GLint loc = getUniformLoc(name);
+  glUniform1i(loc, unit);
+}
 
 void Shader::setUniformTexture(const GLint& loc, const Texture& texture) const {
   use();
@@ -113,21 +123,23 @@ GLuint Shader::compile(const fspath& path, int type) {
   return shaderId;
 }
 
-void Shader::link(GLuint program) {
+bool Shader::link(GLuint program) {
   GLint hasLinked;
-  char infoLog[1'024];
 
   glLinkProgram(program);
   glGetProgramiv(program, GL_LINK_STATUS, &hasLinked);
 
-  // if GL_FALSE
-  if (!hasLinked) {
-    glGetProgramInfoLog(program, 1'024, NULL, infoLog);
-    std::string fmt = clrp::prepare(clrp::ATTRIBUTE::BOLD, clrp::FG::RED);
-    printf(fmt.c_str(), "\n===== Shader link error =====\n\n");
-    puts(infoLog);
-    printf(fmt.c_str(), "=============================\n\n");
-    exit(1);
-  }
+  return hasLinked;
+}
+
+void Shader::printLinkError(const fspath& vsPath, const fspath& fsPath, const fspath& gsPath) {
+  char infoLog[1'024];
+  glGetProgramInfoLog(program, 1'024, NULL, infoLog);
+  std::string fmt = clrp::prepare(clrp::ATTRIBUTE::BOLD, clrp::FG::RED);
+  printf(fmt.c_str(), "\n===== Shader link error =====\n\n");
+  printf("vs (or comp): [%s]\nfs: [%s]\nfs: [%s]\n\n", vsPath.string().c_str(), fsPath.string().c_str(), gsPath.string().c_str());
+  puts(infoLog);
+  printf(fmt.c_str(), "=============================\n\n");
+  exit(1);
 }
 

@@ -1,5 +1,9 @@
 #include "Texture.hpp"
 
+void Texture::unbind(GLenum target) {
+  glBindTexture(target, 0);
+}
+
 Texture::Texture() {}
 
 Texture::Texture(const TextureDescriptor& desc) : desc(desc) {
@@ -11,6 +15,12 @@ Texture::Texture(const TextureDescriptor& desc) : desc(desc) {
   glTexParameteri(desc.target, GL_TEXTURE_WRAP_T, desc.wrapT);
   glTexParameteri(desc.target, GL_TEXTURE_WRAP_R, desc.wrapR);
   // Derived class implementation ...
+}
+
+void Texture::operator=(Texture rhs) {
+  glDeleteTextures(desc.target, &id);
+  desc = rhs.desc;
+  id = rhs.id;
 }
 
 const std::string& Texture::getUniformName() const {
@@ -49,15 +59,11 @@ void Texture::bind() const {
 }
 
 void Texture::unbind() const {
-  glBindTexture(desc.target, 0);
+  unbind(desc.target);
 }
 
 void Texture::bindImage(GLenum access) const {
   glActiveTexture(GL_TEXTURE0 + desc.unit);
   glBindImageTexture(desc.unit, id, 0, GL_TRUE, 0, access, GL_RG8);
-}
-
-void Texture::clear() {
-  glDeleteTextures(desc.target, &id);
 }
 

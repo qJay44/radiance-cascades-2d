@@ -1,8 +1,9 @@
 #include "InputsHandler.hpp"
 
-#include "GLFW/glfw3.h"
-#include "gui.hpp"
 #include <cassert>
+
+#include "GLFW/glfw3.h"
+#include "../gui.hpp"
 
 void InputsHandler::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
   switch (key) {
@@ -17,16 +18,14 @@ void InputsHandler::keyCallback(GLFWwindow* window, int key, int scancode, int a
   }
 }
 
-void InputsHandler::process(ShapeContainer& shapeContainer) {
+void InputsHandler::process(RenderConfig& renderConfig) {
   dvec2 mouse;
   glfwGetCursorPos(global::window, &mouse.x, &mouse.y);
 
-  shapeContainer.mouseFollowShape->setPosition(mouse);
+  renderConfig.onMouseMoved(mouse);
 
   if (glfwGetMouseButton(global::window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS) {
-    shapeContainer.moveShape(mouse, true);
-  } else {
-    shapeContainer.moveShape(mouse, false);
+    renderConfig.onMousePressed(mouse);
   }
 }
 
