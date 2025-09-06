@@ -11,7 +11,6 @@ public:
   RenderConfig(ProfilerManager* profilerManager);
 
   void init(uvec2 winSize);
-  void addProfilier(ProfilerManager* pm);
   void update();
   void drawGI();
 

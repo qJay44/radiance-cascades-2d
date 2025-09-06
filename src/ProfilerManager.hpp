@@ -2,7 +2,6 @@
 
 #include <cassert>
 #include <chrono>
-#include <functional>
 #include <vector>
 
 #include "ImGuiProfilerRenderer.h"
@@ -13,37 +12,41 @@ class ProfilerManager {
 public:
   ProfilerManager(size_t framesCount) : graph(framesCount) {}
 
+  // NOTE: Call this every frame
   void clearTasks() {
     tasks.clear();
   }
 
-  const legit::ProfilerTask& startTask(
-    const std::function<void()>& func,
+  [[nodiscard]]
+  size_t startTask(
     const std::string& name,
     const u32* color = nullptr
   ) {
     assert(tasks.size() < 20);
-    using namespace std::chrono;
+    size_t i = tasks.size();
 
     legit::ProfilerTask task;
     task.name = name;
     task.color = color ? *color : getColorBright(tasks.size());
     task.startTime = 0.f;
-
-    auto start = steady_clock::now();
-    func();
-    auto end = steady_clock::now();
-
-    duration<float> time = end - start;
-    task.endTime = time.count();
-
     tasks.push_back(task);
 
-    return tasks.back();
+    return i;
+  }
+
+  void endTask(size_t i, float durationMs) {
+    assert(i < tasks.size());
+    tasks[i].endTime = durationMs;
   }
 
   void addTask(const legit::ProfilerTask& task) {
     tasks.push_back(task);
+  }
+
+  [[nodiscard]]
+  const legit::ProfilerTask& getTask(size_t i) const {
+    assert(i < tasks.size());
+    return tasks[i];
   }
 
   void render(int graphWidth, int legendWidth, int height, int frameIndexOffset = 1) {

@@ -4,6 +4,7 @@
 #include <direct.h>
 
 #include "ProfilerManager.hpp"
+#include "ScopeProfileTask.hpp"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -107,6 +108,7 @@ int main() {
   renderConfig = new RenderConfig(&profilerManager);
   renderConfig->init(winSize);
 
+  ScopedProfileTask::profilerManager = &profilerManager;
   InputsHandler::renderConfig = renderConfig;
   gui::renderConfig = renderConfig;
 
@@ -181,9 +183,14 @@ int main() {
 
     // ----------------------------------------------------------- //
 
-    taskSwapBuffers = profilerManager.startTask([&] {
+    size_t taskSwapBuffersIdx;
+    {
+      ScopedProfileTask task("glfwSwapBuffers");
       glfwSwapBuffers(window);
-    }, "glfwSwapBuffers");
+      taskSwapBuffersIdx = task.taskIdx;
+    }
+
+    taskSwapBuffers = profilerManager.getTask(taskSwapBuffersIdx);
 
     glfwPollEvents();
   }
