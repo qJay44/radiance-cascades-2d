@@ -3,9 +3,10 @@
 #define PI 3.14159265359f
 #define TAU (2.f * PI)
 
+in vec2 texCoord;
+
 uniform sampler2D u_sceneTex;
 uniform sampler2D u_sdfTex;
-uniform vec2 u_resolution;
 uniform int u_stepsPerRay;
 uniform int u_raysPerPixel;
 uniform float u_epsilon;
@@ -32,7 +33,7 @@ vec4 rayMarch(vec2 pix, vec2 dir) {
 }
 
 void main() {
-  vec2 uv = gl_FragCoord.xy / u_resolution;
+  vec2 uv = texCoord;
   uv.y = 1.f - uv.y;
 
   vec4 radiance = vec4(0.f);

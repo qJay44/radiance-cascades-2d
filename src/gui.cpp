@@ -85,7 +85,7 @@ void gui::draw() {
     if (ImGui::TreeNode("JFA")) {
       // ----- The image ------------------------------------------- //
 
-      const Texture2D& jfaTex = renderConfig->jfaTex->texture;
+      const Texture2D& jfaTex = renderConfig->jfaTexture.texture;
       vec2 jfaSize = vec2(jfaTex.getSize());
       ImGui::Image(jfaTex.getId(), jfaSize * scale);
 

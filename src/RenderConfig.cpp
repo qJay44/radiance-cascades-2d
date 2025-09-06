@@ -13,24 +13,22 @@ void RenderConfig::init(uvec2 winSize) {
 
   sceneTexture = RenderTexture2D({"u_sceneTex", winSize, 0, GL_TEXTURE_2D, GL_RGBA16F});
   seedTexture  = RenderTexture2D({"u_seedTex" , winSize, 0, GL_TEXTURE_2D, GL_RG16F});
-  pingJFA      = RenderTexture2D({"u_inputTex", winSize, 0, GL_TEXTURE_2D, GL_RG16F});
-  pongJFA      = RenderTexture2D({"u_inputTex", winSize, 0, GL_TEXTURE_2D, GL_RG16F});
+  jfaTexture   = RenderTexture2D({"u_jfaTex"  , winSize, 0, GL_TEXTURE_2D, GL_RG16F});
   sdfTexture   = RenderTexture2D({"u_sdfTex"  , winSize, 1, GL_TEXTURE_2D, GL_R16F});
+  ping         = RenderTexture2D({"u_inputTex", winSize, 0, GL_TEXTURE_2D, GL_RGBA16F});
+  pong         = RenderTexture2D({"u_inputTex", winSize, 0, GL_TEXTURE_2D, GL_RGBA16F});
 
   screenRect = Rectangle2D(winSize, winSize / 2u);
 
   seedShader.setUniformTexture(sceneTexture.texture);
-  seedShader.setUniform2f("u_resolution", winSize);
 
-  jfaShader.setUniformTexture(pingJFA.texture); // same unit
+  jfaShader.setUniformTexture(ping.texture); // same unit
   jfaShader.setUniform2f("u_resolution", winSize);
 
-  sdfShader.setUniformTexture("u_jfaTex", pingJFA.texture.getUnit()); // same unit
-  sdfShader.setUniform2f("u_resolution", winSize);
+  sdfShader.setUniformTexture(jfaTexture.texture);
 
   giShader.setUniformTexture(sceneTexture.texture);
   giShader.setUniformTexture(sdfTexture.texture);
-  giShader.setUniform2f("u_resolution", winSize);
 
   tex2DShader.setUniformTexture("u_texture", 0);
 
@@ -116,11 +114,12 @@ void RenderConfig::drawSeed() {
 void RenderConfig::drawJFA() {
   ScopedProfileTask task("drawJFA");
 
-  RenderTexture2D* inputTex = &pingJFA;
-  RenderTexture2D* outputTex = &pongJFA;
-  jfaTex = &pongJFA;
+  RenderTexture2D* inputTex = &ping;
+  RenderTexture2D* outputTex = &pong;
+  RenderTexture2D* lastTex = &pong;
 
   inputTex->clear();
+  outputTex->clear();
 
   seedTexture.texture.bind();
   inputTex->draw(screenRect, tex2DShader);
@@ -138,8 +137,12 @@ void RenderConfig::drawJFA() {
     RenderTexture2D* temp = inputTex;
     inputTex = outputTex;
     outputTex = temp;
-    jfaTex = temp;
+    lastTex = temp;
   }
+
+  lastTex->texture.bind();
+  jfaTexture.draw(screenRect, tex2DShader);
+  lastTex->texture.unbind();
 }
 
 void RenderConfig::drawSDF() {
@@ -147,8 +150,8 @@ void RenderConfig::drawSDF() {
 
   sdfTexture.clear();
 
-  jfaTex->texture.bind();
+  jfaTexture.texture.bind();
   sdfTexture.draw(screenRect, sdfShader);
-  jfaTex->texture.unbind();
+  jfaTexture.texture.unbind();
 }
 
