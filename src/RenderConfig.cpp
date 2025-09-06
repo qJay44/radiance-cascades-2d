@@ -86,7 +86,9 @@ void RenderConfig::drawMouseAt(const vec2& point) {
   mouseShader.setUniform1f("u_radius", mouseRadius);
 
   glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   sceneTexture.draw(screenRect, mouseShader);
+  glDisable(GL_BLEND);
 }
 
 void RenderConfig::drawSeed() {
@@ -185,8 +187,7 @@ void RenderConfig::drawGI() {
   sdfTexture.texture.unbind();
 
   FBO::unbind();
-  glDisable(GL_BLEND);
-  glClearColor(0.f, 0.f, 0.f, 0.f);
+  glClearColor(0.f, 0.f, 0.f, 1.f);
   glClear(GL_COLOR_BUFFER_BIT);
 
   lastTex->texture.bind();

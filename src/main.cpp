@@ -114,9 +114,6 @@ int main() {
 
   legit::ProfilerTask taskSwapBuffers;
 
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
   // Render loop
   while (!glfwWindowShouldClose(window)) {
     static double titleTime = glfwGetTime();
@@ -167,7 +164,6 @@ int main() {
 
     // ----- Draw to main screen --------------------------------- //
 
-    glEnable(GL_BLEND);
     renderConfig->draw();
 
     gui::draw();

@@ -22,7 +22,7 @@ struct RenderTexture2D {
     fbo = rhs.fbo;
   }
 
-  void clear(vec4 color = vec4(0.f)) {
+  void clear(vec4 color = vec4(vec3(0.f), 1.f)) {
     fbo.bind();
     glClearColor(color.r, color.g, color.b, color.a);
     glClear(GL_COLOR_BUFFER_BIT);
