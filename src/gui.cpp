@@ -126,7 +126,7 @@ void gui::draw() {
 
   if (ImGui::CollapsingHeader("Profiler")) {
     assert(renderConfig->profilerManager != nullptr);
-    renderConfig->profilerManager->render(400, 100, 200, 1);
+    renderConfig->profilerManager->render(400, 100, 200, 10);
   }
 
   ImGui::End();

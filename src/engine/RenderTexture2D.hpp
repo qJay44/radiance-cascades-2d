@@ -23,8 +23,10 @@ struct RenderTexture2D {
   }
 
   void clear(vec4 color = vec4(0.f)) {
+    fbo.bind();
     glClearColor(color.r, color.g, color.b, color.a);
     glClear(GL_COLOR_BUFFER_BIT);
+    fbo.unbind();
   }
 
   void draw(const Rectangle2D& area, const Shader& shader) {

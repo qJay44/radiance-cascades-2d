@@ -13,7 +13,7 @@
 #include "engine/FBO.hpp"
 #include "global.hpp"
 #include "utils/clrp.hpp"
-#include "engine/InputsHandler.hpp"
+#include "InputsHandler.hpp"
 #include "gui.hpp"
 #include "utils/utils.hpp"
 
@@ -73,6 +73,7 @@ int main() {
   glfwSetKeyCallback(window, InputsHandler::keyCallback);
   glfwSetWindowSizeCallback(global::window, winResizeCallback);
   // glfwSetMouseButtonCallback(window, InputsHandler::mouseButtonCallback);
+  // glfwSetCursorPosCallback(window, InputsHandler::cursorMoveCallback);
   // glfwSetScrollCallback(window, InputsHandler::scrollCallback);
 
   // GLAD init
@@ -106,7 +107,10 @@ int main() {
   renderConfig = new RenderConfig(&profilerManager);
   renderConfig->init(winSize);
 
+  InputsHandler::renderConfig = renderConfig;
   gui::renderConfig = renderConfig;
+
+  legit::ProfilerTask taskSwapBuffers;
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -157,7 +161,9 @@ int main() {
 
     profilerManager.clearTasks();
 
-    InputsHandler::process(renderConfig);
+    profilerManager.addTask(taskSwapBuffers);
+
+    InputsHandler::process();
 
     renderConfig->update();
 
@@ -175,7 +181,10 @@ int main() {
 
     // ----------------------------------------------------------- //
 
-    glfwSwapBuffers(window);
+    taskSwapBuffers = profilerManager.startTask([&] {
+      glfwSwapBuffers(window);
+    }, "glfwSwapBuffers");
+
     glfwPollEvents();
   }
 

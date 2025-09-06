@@ -12,9 +12,9 @@ void RenderConfig::init(uvec2 winSize) {
 
   sceneTexture = RenderTexture2D({"u_sceneTex", winSize, 0, GL_TEXTURE_2D, GL_RGBA16F});
   seedTexture  = RenderTexture2D({"u_seedTex" , winSize, 0, GL_TEXTURE_2D, GL_RG16F});
-  sdfTexture   = RenderTexture2D({"u_sdfTex"  , winSize, 1, GL_TEXTURE_2D, GL_RG16F});
   pingJFA      = RenderTexture2D({"u_inputTex", winSize, 0, GL_TEXTURE_2D, GL_RG16F});
-  pongJFA      = RenderTexture2D({"u_inputTex", winSize, 0, GL_TEXTURE_2D, GL_R16F});
+  pongJFA      = RenderTexture2D({"u_inputTex", winSize, 0, GL_TEXTURE_2D, GL_RG16F});
+  sdfTexture   = RenderTexture2D({"u_sdfTex"  , winSize, 1, GL_TEXTURE_2D, GL_R16F});
 
   screenRect = Rectangle2D(winSize, winSize / 2u);
 
@@ -70,23 +70,25 @@ void RenderConfig::onMouseMoved(const vec2& pos) {
 }
 
 void RenderConfig::update() {
-  // drawSeed();
-  // drawJFA();
-  // drawSDF();
+  drawSeed();
+  drawJFA();
+  drawSDF();
 }
 
 void RenderConfig::drawGI() {
-  sceneTexture.texture.bind();
-  sdfTexture.texture.bind();
+  profilerManager->startTask([&] {
+    sceneTexture.texture.bind();
+    sdfTexture.texture.bind();
 
-  giShader.setUniform1i("u_stepsPerRay", stepsPerRay);
-  giShader.setUniform1i("u_raysPerPixel", raysPerPixel);
-  giShader.setUniform1f("u_epsilon", epsilon);
+    giShader.setUniform1i("u_stepsPerRay", stepsPerRay);
+    giShader.setUniform1i("u_raysPerPixel", raysPerPixel);
+    giShader.setUniform1f("u_epsilon", epsilon);
 
-  screenRect.draw(giShader);
+    screenRect.draw(giShader);
 
-  sceneTexture.texture.unbind();
-  sdfTexture.texture.unbind();
+    sceneTexture.texture.unbind();
+    sdfTexture.texture.unbind();
+  }, "drawGI");
 }
 
 void RenderConfig::calcPassesJFA() {

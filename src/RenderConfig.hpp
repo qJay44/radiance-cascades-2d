@@ -26,9 +26,9 @@ private:
 
   RenderTexture2D sceneTexture;
   RenderTexture2D seedTexture;
-  RenderTexture2D sdfTexture;
   RenderTexture2D pingJFA;
   RenderTexture2D pongJFA;
+  RenderTexture2D sdfTexture;
   RenderTexture2D* jfaTex = &pongJFA;
 
   Rectangle2D screenRect;
