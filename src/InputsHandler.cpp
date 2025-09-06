@@ -9,6 +9,8 @@ RenderConfig* InputsHandler::renderConfig = nullptr;
 
 // Single press or release
 void InputsHandler::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+  assert(renderConfig);
+
   switch (key) {
     case GLFW_KEY_Q:
       if (action == GLFW_PRESS)
@@ -17,6 +19,10 @@ void InputsHandler::keyCallback(GLFWwindow* window, int key, int scancode, int a
     case GLFW_KEY_E:
       if (action == GLFW_PRESS)
         gui::toggle();
+      break;
+    case GLFW_KEY_R:
+      if (action == GLFW_PRESS)
+        renderConfig->clearScene();
       break;
   }
 }
@@ -28,6 +34,7 @@ void InputsHandler::keyCallback(GLFWwindow* window, int key, int scancode, int a
 
 void InputsHandler::process() {
   assert(renderConfig);
+
   dvec2 mouse;
   glfwGetCursorPos(global::window, &mouse.x, &mouse.y);
 

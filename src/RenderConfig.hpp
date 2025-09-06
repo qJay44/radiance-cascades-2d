@@ -11,6 +11,7 @@ public:
   RenderConfig(ProfilerManager* profilerManager);
 
   void init(uvec2 winSize);
+  void clearScene();
   void draw();
 
   void onMousePressed(const vec2& pos);
@@ -46,8 +47,8 @@ private:
   vec2 mousePrevPos;
 
   // Global illumination
-  int rayCountBase = 16;
-  int rayMaxSteps = 8;
+  int rayCountBase = 4;
+  int rayMaxSteps = 4;
   float epsilon = 0.001f;
   float scale = 1.f;
   float srgb = 2.2f;

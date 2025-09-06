@@ -37,6 +37,10 @@ void RenderConfig::init(uvec2 winSize) {
   calcPassesJFA();
 }
 
+void RenderConfig::clearScene() {
+  sceneTexture.clear({vec4(0.f)});
+}
+
 void RenderConfig::onMousePressed(const vec2& pos) {
   isDrawing = true;
   mousePrevPos = pos;
@@ -166,7 +170,7 @@ void RenderConfig::drawGI() {
   giShader.setUniform1i("u_rayCountBase", rayCountBase);
 
   for (int i = 2; i >= 1; i--) {
-    giShader.setUniform1i("u_rayCount", glm::pow(rayCountBase, i));
+    giShader.setUniform1i("u_rayCount", int(glm::pow(rayCountBase, i)));
     giShader.setUniform1i("u_rayMaxSteps", rayMaxSteps);
     giShader.setUniform1f("u_epsilon", epsilon);
     giShader.setUniform1f("u_scale", scale);

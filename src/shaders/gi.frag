@@ -2,6 +2,10 @@
 
 #define DIAGONAL_LENGTH_NORM 1.41421356237f // sqrt(2.f)
 
+#define PI 3.141592265359f
+#define TAU (2.f * PI)
+
+
 out vec4 FragColor;
 
 in vec2 texCoord;
@@ -28,10 +32,12 @@ void main() {
   float partial = 0.125f; // 1/8th of the uv (interval0 ?)
   float intervalStart = isLastLayer ? 0.f : partial;
   float intervalEnd = isLastLayer ? partial : DIAGONAL_LENGTH_NORM;
+  float rayCountStepNorm = 1.f / u_rayCount;
+  float angleStepSize = TAU * rayCountStepNorm;
 
   for (int i = 0; i < u_rayCount; i++) {
     float angleStep = float(i) + 0.5f; // Add 0.5 radians to avoid vertical radians?
-    float angle = angleStep * angleStep;
+    float angle = angleStep * angleStepSize;
     vec2 dir = vec2(cos(angle), -sin(angle));
 
     vec2 sampleUV = effectiveUV + dir * intervalStart * u_scale;
@@ -39,7 +45,7 @@ void main() {
     vec4 radDelta = vec4(0.f);
 
     for (int step = 1; step < u_rayMaxSteps; step++) {
-      float dist = texture(u_sdfTex, effectiveUV).r;
+      float dist = texture(u_sdfTex, sampleUV).r;
 
       sampleUV += dir * dist * u_scale;
 
@@ -58,7 +64,7 @@ void main() {
     radiance += radDelta;
   }
 
-  vec3 final = radiance.rgb / u_rayCount;
+  vec3 final = radiance.rgb * rayCountStepNorm;
   vec3 correctSRGB = pow(final, vec3(1.f / u_srgb));
 
   FragColor = vec4(correctSRGB, 1.f);

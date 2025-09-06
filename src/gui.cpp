@@ -47,7 +47,7 @@ void gui::draw() {
     ImGui::ColorEdit3("Color", glm::value_ptr(renderConfig->mouseColor));
 
     if (ImGui::Button("Clear"))
-      renderConfig->sceneTexture.clear();
+      renderConfig->clearScene();
   }
 
   if (ImGui::CollapsingHeader("Global Illumination")) {
