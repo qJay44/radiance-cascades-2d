@@ -159,23 +159,16 @@ int main() {
 
     // ----- Updates --------------------------------------------- //
 
-    glEnable(GL_BLEND);
-
     profilerManager.clearTasks();
 
     profilerManager.addTask(taskSwapBuffers);
 
     InputsHandler::process();
 
-    renderConfig->update();
-
     // ----- Draw to main screen --------------------------------- //
 
-    FBO::unbind();
-    glDisable(GL_BLEND);
-    glClearColor(0.f, 0.f, 0.f, 1.f);
-    glClear(GL_COLOR_BUFFER_BIT);
-    renderConfig->drawGI();
+    glEnable(GL_BLEND);
+    renderConfig->draw();
 
     gui::draw();
     ImGui::Render();

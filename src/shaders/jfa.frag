@@ -1,5 +1,7 @@
 #version 460 core
 
+out vec4 FragColor;
+
 in vec2 texCoord;
 
 uniform sampler2D u_inputTex;
@@ -34,6 +36,6 @@ void main() {
     }
   }
 
-  gl_FragColor = nearestSeed;
+  FragColor = nearestSeed;
 }
 

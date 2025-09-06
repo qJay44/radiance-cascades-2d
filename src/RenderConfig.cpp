@@ -2,6 +2,7 @@
 #include "ScopeProfileTask.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 
 RenderConfig::RenderConfig(ProfilerManager* profilerManager) {
@@ -29,6 +30,7 @@ void RenderConfig::init(uvec2 winSize) {
 
   giShader.setUniformTexture(sceneTexture.texture);
   giShader.setUniformTexture(sdfTexture.texture);
+  giShader.setUniform2f("u_resolution", winSize);
 
   tex2DShader.setUniformTexture("u_texture", 0);
 
@@ -64,26 +66,11 @@ void RenderConfig::onMouseMoved(const vec2& pos) {
   mousePrevPos = pos;
 }
 
-void RenderConfig::update() {
+void RenderConfig::draw() {
   drawSeed();
   drawJFA();
   drawSDF();
-}
-
-void RenderConfig::drawGI() {
-  ScopedProfileTask task("drawGI");
-
-  sceneTexture.texture.bind();
-  sdfTexture.texture.bind();
-
-  giShader.setUniform1i("u_stepsPerRay", stepsPerRay);
-  giShader.setUniform1i("u_raysPerPixel", raysPerPixel);
-  giShader.setUniform1f("u_epsilon", epsilon);
-
-  screenRect.draw(giShader);
-
-  sceneTexture.texture.unbind();
-  sdfTexture.texture.unbind();
+  drawGI();
 }
 
 void RenderConfig::calcPassesJFA() {
@@ -98,6 +85,7 @@ void RenderConfig::drawMouseAt(const vec2& point) {
   mouseShader.setUniform3f("u_color", mouseColor);
   mouseShader.setUniform1f("u_radius", mouseRadius);
 
+  glEnable(GL_BLEND);
   sceneTexture.draw(screenRect, mouseShader);
 }
 
@@ -121,6 +109,8 @@ void RenderConfig::drawJFA() {
   inputTex->clear();
   outputTex->clear();
 
+  // Fill input
+  assert(seedTexture.texture.getUnit() == 0);
   seedTexture.texture.bind();
   inputTex->draw(screenRect, tex2DShader);
   seedTexture.texture.unbind();
@@ -153,5 +143,54 @@ void RenderConfig::drawSDF() {
   jfaTexture.texture.bind();
   sdfTexture.draw(screenRect, sdfShader);
   jfaTexture.texture.unbind();
+}
+
+void RenderConfig::drawGI() {
+  ScopedProfileTask task("drawGI");
+
+  RenderTexture2D* inputTex = &ping;
+  RenderTexture2D* outputTex = &pong;
+  RenderTexture2D* lastTex = &pong;
+
+  inputTex->clear();
+  outputTex->clear();
+
+  assert(sceneTexture.texture.getUnit() == 0);
+  sceneTexture.texture.bind();
+  inputTex->draw(screenRect, tex2DShader);
+  sceneTexture.texture.unbind();
+
+  sdfTexture.texture.bind();
+  giShader.setUniform1i("u_rayCountBase", rayCountBase);
+
+  for (int i = 2; i >= 1; i--) {
+    giShader.setUniform1i("u_rayCount", glm::pow(rayCountBase, i));
+    giShader.setUniform1i("u_rayMaxSteps", rayMaxSteps);
+    giShader.setUniform1f("u_epsilon", epsilon);
+    giShader.setUniform1f("u_scale", scale);
+    giShader.setUniform1f("u_srgb", srgb);
+
+    outputTex->clear();
+
+    inputTex->texture.bind();
+    outputTex->draw(screenRect, giShader);
+    inputTex->texture.unbind();
+
+    RenderTexture2D* temp = inputTex;
+    inputTex = outputTex;
+    lastTex = outputTex;
+    outputTex = temp;
+  }
+
+  sdfTexture.texture.unbind();
+
+  FBO::unbind();
+  glDisable(GL_BLEND);
+  glClearColor(0.f, 0.f, 0.f, 0.f);
+  glClear(GL_COLOR_BUFFER_BIT);
+
+  lastTex->texture.bind();
+  screenRect.draw(finalShader);
+  lastTex->texture.unbind();
 }
 

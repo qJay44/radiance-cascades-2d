@@ -11,8 +11,7 @@ public:
   RenderConfig(ProfilerManager* profilerManager);
 
   void init(uvec2 winSize);
-  void update();
-  void drawGI();
+  void draw();
 
   void onMousePressed(const vec2& pos);
   void onMouseReleased();
@@ -27,6 +26,7 @@ private:
   RenderTexture2D seedTexture;
   RenderTexture2D jfaTexture;
   RenderTexture2D sdfTexture;
+  RenderTexture2D finalTexture;
   RenderTexture2D ping;
   RenderTexture2D pong;
 
@@ -38,6 +38,7 @@ private:
   Shader giShader    = Shader("default2D.vert", "gi.frag");
   Shader tex2DShader = Shader("default2D.vert", "texture2D.frag");
   Shader mouseShader = Shader("default2D.vert", "mouse.frag");
+  Shader finalShader = Shader("default2D.vert", "final.frag");
 
   // Mouse
   float mouseRadius = 5.f;
@@ -45,9 +46,11 @@ private:
   vec2 mousePrevPos;
 
   // Global illumination
-  int raysPerPixel = 32;
-  int stepsPerRay = 32;
+  int rayCountBase = 16;
+  int rayMaxSteps = 8;
   float epsilon = 0.001f;
+  float scale = 1.f;
+  float srgb = 2.2f;
   int jfaPasses = 1;
 
   bool isDrawing = false;
@@ -61,5 +64,6 @@ private:
   void drawSeed();
   void drawJFA();
   void drawSDF();
+  void drawGI();
 };
 

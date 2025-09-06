@@ -50,9 +50,11 @@ void gui::draw() {
       renderConfig->sceneTexture.clear();
   }
 
-  if (ImGui::CollapsingHeader("Ray march")) {
-    ImGui::SliderInt("Rays per pixel", &renderConfig->raysPerPixel, 1, 128);
-    ImGui::SliderInt("Steps per ray", &renderConfig->stepsPerRay, 1, 128);
+  if (ImGui::CollapsingHeader("Global Illumination")) {
+    ImGui::SliderInt("Base ray count", &renderConfig->rayCountBase, 4, 128);
+    ImGui::SliderInt("Max steps per ray", &renderConfig->rayMaxSteps, 1, 128);
+    ImGui::SliderFloat("Scale", &renderConfig->scale, 1.f, 88.f);
+    ImGui::SliderFloat("sRGB", &renderConfig->srgb, 1.f, 20.f);
 
     ImGui::Text("Epsilon: %f", renderConfig->epsilon); ImGui::SameLine();
     if (ImGui::ArrowButton("##left" , ImGuiDir_Left))  {renderConfig->epsilon *= 0.1f;} ImGui::SameLine();

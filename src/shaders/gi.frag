@@ -1,61 +1,66 @@
 #version 460 core
 
-#define PI 3.14159265359f
-#define TAU (2.f * PI)
+#define DIAGONAL_LENGTH_NORM 1.41421356237f // sqrt(2.f)
+
+out vec4 FragColor;
 
 in vec2 texCoord;
 
-uniform sampler2D u_sceneTex;
+uniform sampler2D u_inputTex;
 uniform sampler2D u_sdfTex;
-uniform int u_stepsPerRay;
-uniform int u_raysPerPixel;
+uniform vec2 u_resolution;
+uniform int u_rayCountBase;
+uniform int u_rayCount;
+uniform int u_rayMaxSteps;
 uniform float u_epsilon;
-
-float blueNoise(vec2 coord) {
-  return fract(sin(dot(coord ,vec2(12.9898f, 78.233f))) * 43758.5453f);
-}
-
-vec4 rayMarch(vec2 pix, vec2 dir) {
-  for (int step = 0; step < u_stepsPerRay; step++) {
-    float dist = texture(u_sdfTex, pix).r;
-    pix += dir * dist;
-
-    // Bounds check
-    if (floor(pix) != vec2(0.f))
-      break;
-
-    if (dist < u_epsilon) {
-      return texture(u_sceneTex, pix);
-    }
-  }
-
-  return vec4(0.f);
-}
+uniform float u_scale;
+uniform float u_srgb;
 
 void main() {
-  vec2 uv = texCoord;
-  uv.y = 1.f - uv.y;
-
+  vec2 coord = ivec2(texCoord * u_resolution);
   vec4 radiance = vec4(0.f);
-  vec4 light = texture(u_sceneTex, uv);
-  float raysPerPixelNorm = 1.f / float(u_raysPerPixel);
 
-  if (light.a < 0.1f) {
-    float angleStep = TAU * raysPerPixelNorm;
-    float noise = blueNoise(uv);
+  bool isLastLayer = u_rayCount == u_rayCountBase;
 
-    for (int i = 0; i < u_raysPerPixel; i++) {
-      float angle = angleStep * (float(i) + noise);
-      vec2 rayDir = vec2(cos(angle), -sin(angle));
-      radiance += rayMarch(uv, rayDir);
+  // uv of half image (1 of 4 squares)
+  vec2 effectiveUV = isLastLayer ? texCoord : floor(coord * 0.5f) * 2.f / u_resolution;
+
+  float partial = 0.125f; // 1/8th of the uv (interval0 ?)
+  float intervalStart = isLastLayer ? 0.f : partial;
+  float intervalEnd = isLastLayer ? partial : DIAGONAL_LENGTH_NORM;
+
+  for (int i = 0; i < u_rayCount; i++) {
+    float angleStep = float(i) + 0.5f; // Add 0.5 radians to avoid vertical radians?
+    float angle = angleStep * angleStep;
+    vec2 dir = vec2(cos(angle), -sin(angle));
+
+    vec2 sampleUV = effectiveUV + dir * intervalStart * u_scale;
+    float traveled = intervalStart;
+    vec4 radDelta = vec4(0.f);
+
+    for (int step = 1; step < u_rayMaxSteps; step++) {
+      float dist = texture(u_sdfTex, effectiveUV).r;
+
+      sampleUV += dir * dist * u_scale;
+
+      if (floor(sampleUV) != vec2(0.f)) break;
+
+      if (dist < u_epsilon) {
+        vec4 texel = texture(u_inputTex, sampleUV);
+        radDelta += vec4(pow(texel.rgb, vec3(u_srgb)), 1.f);
+        break;
+      }
+
+      traveled += dist;
+      if (traveled >= intervalEnd) break;
     }
 
-  } else if (length(light.rgb) >= 0.1f) {
-    radiance = light;
+    radiance += radDelta;
   }
 
-  vec4 finalRadiance = vec4(max(light, radiance * raysPerPixelNorm).rgb, 1.f);
+  vec3 final = radiance.rgb / u_rayCount;
+  vec3 correctSRGB = pow(final, vec3(1.f / u_srgb));
 
-  gl_FragColor = finalRadiance;
+  FragColor = vec4(correctSRGB, 1.f);
 }
 
