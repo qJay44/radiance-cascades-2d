@@ -49,7 +49,7 @@ private:
   // Global illumination
   int rayCountBase = 4;
   int rayMaxSteps = 4;
-  float epsilon = 0.001f;
+  float interval0 = 0.1f;
   float scale = 1.f;
   float srgb = 2.2f;
   int jfaPasses = 1;

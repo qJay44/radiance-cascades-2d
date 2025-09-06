@@ -13,17 +13,17 @@ void RenderConfig::init(uvec2 winSize) {
   this->winSize = winSize;
 
   sceneTexture = RenderTexture2D({"u_sceneTex", winSize, 0, GL_TEXTURE_2D, GL_RGBA16F});
-  seedTexture  = RenderTexture2D({"u_seedTex" , winSize, 0, GL_TEXTURE_2D, GL_RG16F});
+  seedTexture  = RenderTexture2D({"u_seedTex" , winSize, 2, GL_TEXTURE_2D, GL_RG16F});
   jfaTexture   = RenderTexture2D({"u_jfaTex"  , winSize, 0, GL_TEXTURE_2D, GL_RG16F});
   sdfTexture   = RenderTexture2D({"u_sdfTex"  , winSize, 1, GL_TEXTURE_2D, GL_R16F});
-  ping         = RenderTexture2D({"u_inputTex", winSize, 0, GL_TEXTURE_2D, GL_RGBA16F});
-  pong         = RenderTexture2D({"u_inputTex", winSize, 0, GL_TEXTURE_2D, GL_RGBA16F});
+  ping         = RenderTexture2D({"u_inputTex", winSize, 2, GL_TEXTURE_2D, GL_RGBA16F});
+  pong         = RenderTexture2D({"u_inputTex", winSize, 2, GL_TEXTURE_2D, GL_RGBA16F});
 
   screenRect = Rectangle2D(winSize, winSize / 2u);
 
   seedShader.setUniformTexture(sceneTexture.texture);
 
-  jfaShader.setUniformTexture(ping.texture); // same unit
+  jfaShader.setUniformTexture(ping.texture); // same unit as seed
   jfaShader.setUniform2f("u_resolution", winSize);
 
   sdfShader.setUniformTexture(jfaTexture.texture);
@@ -32,7 +32,8 @@ void RenderConfig::init(uvec2 winSize) {
   giShader.setUniformTexture(sdfTexture.texture);
   giShader.setUniform2f("u_resolution", winSize);
 
-  tex2DShader.setUniformTexture("u_texture", 0);
+  tex2DShader.setUniformTexture(ping.texture);
+  finalShader.setUniformTexture(ping.texture);
 
   calcPassesJFA();
 }
@@ -116,7 +117,7 @@ void RenderConfig::drawJFA() {
   outputTex->clear();
 
   // Fill input
-  assert(seedTexture.texture.getUnit() == 0);
+  assert(seedTexture.texture.getUnit() == ping.texture.getUnit());
   seedTexture.texture.bind();
   inputTex->draw(screenRect, tex2DShader);
   seedTexture.texture.unbind();
@@ -124,9 +125,8 @@ void RenderConfig::drawJFA() {
   for (int i = 0; i < jfaPasses; i++) {
     jfaShader.setUniform1i("u_offset", 1 << (jfaPasses - i - 1));
 
-    outputTex->clear();
-
     inputTex->texture.bind();
+    outputTex->clear();
     outputTex->draw(screenRect, jfaShader);
     inputTex->texture.unbind();
 
@@ -161,18 +161,14 @@ void RenderConfig::drawGI() {
   inputTex->clear();
   outputTex->clear();
 
-  assert(sceneTexture.texture.getUnit() == 0);
   sceneTexture.texture.bind();
-  inputTex->draw(screenRect, tex2DShader);
-  sceneTexture.texture.unbind();
-
   sdfTexture.texture.bind();
   giShader.setUniform1i("u_rayCountBase", rayCountBase);
 
   for (int i = 2; i >= 1; i--) {
-    giShader.setUniform1i("u_rayCount", int(glm::pow(rayCountBase, i)));
+    giShader.setUniform1i("u_rayCount", std::pow(rayCountBase, i));
     giShader.setUniform1i("u_rayMaxSteps", rayMaxSteps);
-    giShader.setUniform1f("u_epsilon", epsilon);
+    giShader.setUniform1f("u_interval0", interval0);
     giShader.setUniform1f("u_scale", scale);
     giShader.setUniform1f("u_srgb", srgb);
 
@@ -188,6 +184,7 @@ void RenderConfig::drawGI() {
     outputTex = temp;
   }
 
+  sceneTexture.texture.unbind();
   sdfTexture.texture.unbind();
 
   FBO::unbind();

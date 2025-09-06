@@ -53,12 +53,9 @@ void gui::draw() {
   if (ImGui::CollapsingHeader("Global Illumination")) {
     ImGui::SliderInt("Base ray count", &renderConfig->rayCountBase, 4, 128);
     ImGui::SliderInt("Max steps per ray", &renderConfig->rayMaxSteps, 1, 128);
-    ImGui::SliderFloat("Scale", &renderConfig->scale, 1.f, 88.f);
+    ImGui::SliderFloat("interval0", &renderConfig->interval0, 0.01f, 1.41f);
+    ImGui::SliderFloat("Scale", &renderConfig->scale, 0.01f, 1.f);
     ImGui::SliderFloat("sRGB", &renderConfig->srgb, 1.f, 20.f);
-
-    ImGui::Text("Epsilon: %f", renderConfig->epsilon); ImGui::SameLine();
-    if (ImGui::ArrowButton("##left" , ImGuiDir_Left))  {renderConfig->epsilon *= 0.1f;} ImGui::SameLine();
-    if (ImGui::ArrowButton("##right", ImGuiDir_Right)) {renderConfig->epsilon *= 10.f;}
   }
 
   if (ImGui::CollapsingHeader("Textures")) {
