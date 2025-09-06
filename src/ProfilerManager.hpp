@@ -22,6 +22,7 @@ public:
     const std::string& name,
     const u32* color = nullptr
   ) {
+    assert(tasks.size() < 20);
     using namespace std::chrono;
 
     legit::ProfilerTask task;

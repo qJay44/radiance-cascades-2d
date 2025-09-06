@@ -42,7 +42,7 @@ void RenderConfig::addProfilier(ProfilerManager* pm) {
 
 void RenderConfig::onMousePressed(const vec2& pos) {
   isDrawing = true;
-  mouse.prevPos = pos;
+  mousePrevPos = pos;
   drawMouseAt(pos);
 }
 
@@ -53,7 +53,7 @@ void RenderConfig::onMouseReleased() {
 void RenderConfig::onMouseMoved(const vec2& pos) {
   if (!isDrawing) return;
 
-  vec2 v = pos - mouse.prevPos;
+  vec2 v = pos - mousePrevPos;
   float dist = v.length();
   if (dist < 0.1f) return;
 
@@ -63,20 +63,16 @@ void RenderConfig::onMouseMoved(const vec2& pos) {
 
   for (int i = 0; i < steps; i++) {
     float t = static_cast<float>(i) / steps;
-    drawMouseAt(mouse.prevPos + t * (pos - mouse.prevPos));
+    drawMouseAt(mousePrevPos + t * (pos - mousePrevPos));
   }
 
-  mouse.prevPos = pos;
+  mousePrevPos = pos;
 }
 
 void RenderConfig::update() {
-  drawSeed();
-  drawJFA();
-  drawSDF();
-}
-
-void RenderConfig::clearScene() {
-  sceneTexture.clear();
+  // drawSeed();
+  // drawJFA();
+  // drawSDF();
 }
 
 void RenderConfig::drawGI() {
@@ -100,18 +96,21 @@ void RenderConfig::calcPassesJFA() {
 
 void RenderConfig::drawMouseAt(const vec2& point) {
   profilerManager->startTask([&] {
-    mouse.shader.setUniform2f("u_pos", point);
-    mouse.shader.setUniform3f("u_color", mouse.drawColor);
-    mouse.shader.setUniform1f("u_radius", mouse.drawRadius);
+    mouseShader.setUniform2f("u_pos", point);
+    mouseShader.setUniform3f("u_color", mouseColor);
+    mouseShader.setUniform1f("u_radius", mouseRadius);
 
-    sceneTexture.draw(screenRect, mouse.shader);
+    sceneTexture.draw(screenRect, mouseShader);
   }, "drawMouseAt");
 }
 
 void RenderConfig::drawSeed() {
   profilerManager->startTask([&] {
     seedTexture.clear();
-    seedTexture.draw(screenRect, seedShader, &sceneTexture.texture);
+
+    sceneTexture.texture.bind();
+    seedTexture.draw(screenRect, seedShader);
+    sceneTexture.texture.unbind();
   }, "drawSeed");
 }
 
@@ -122,13 +121,19 @@ void RenderConfig::drawJFA() {
     jfaTex = &pongJFA;
 
     inputTex->clear();
-    inputTex->draw(screenRect, tex2DShader, &seedTexture.texture);
+
+    seedTexture.texture.bind();
+    inputTex->draw(screenRect, tex2DShader);
+    seedTexture.texture.unbind();
 
     for (int i = 0; i < jfaPasses; i++) {
       jfaShader.setUniform1i("u_offset", 1 << (jfaPasses - i - 1));
 
       outputTex->clear();
-      outputTex->draw(screenRect, jfaShader, &inputTex->texture);
+
+      inputTex->texture.bind();
+      outputTex->draw(screenRect, jfaShader);
+      inputTex->texture.unbind();
 
       RenderTexture2D* temp = inputTex;
       inputTex = outputTex;
@@ -141,7 +146,10 @@ void RenderConfig::drawJFA() {
 void RenderConfig::drawSDF() {
   profilerManager->startTask([&] {
     sdfTexture.clear();
-    sdfTexture.draw(screenRect, sdfShader, &jfaTex->texture);
+
+    jfaTex->texture.bind();
+    sdfTexture.draw(screenRect, sdfShader);
+    jfaTex->texture.unbind();
   }, "drawSDF");
 }
 

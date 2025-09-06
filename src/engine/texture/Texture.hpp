@@ -6,7 +6,7 @@ class Texture {
 public:
   static void unbind(GLenum target);
 
-  Texture();
+  Texture() = default;
   Texture(const TextureDescriptor& desc); // Only generates and binds texture
 
   void operator=(Texture rhs);

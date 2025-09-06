@@ -1,10 +1,9 @@
 #include "Texture.hpp"
+#include <cstdio>
 
 void Texture::unbind(GLenum target) {
   glBindTexture(target, 0);
 }
-
-Texture::Texture() {}
 
 Texture::Texture(const TextureDescriptor& desc) : desc(desc) {
   glGenTextures(1, &id);
@@ -18,7 +17,9 @@ Texture::Texture(const TextureDescriptor& desc) : desc(desc) {
 }
 
 void Texture::operator=(Texture rhs) {
-  glDeleteTextures(desc.target, &id);
+  if (id)
+    glDeleteTextures(desc.target, &id);
+
   desc = rhs.desc;
   id = rhs.id;
 }

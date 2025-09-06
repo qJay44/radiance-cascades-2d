@@ -4,10 +4,9 @@
 #include "Shader.hpp"
 #include "shapes/Rectangle2D.hpp"
 #include "texture/Texture2D.hpp"
-#include "texture/TextureDescriptor.hpp"
 
 struct RenderTexture2D {
-  RenderTexture2D() {}
+  RenderTexture2D() = default;
 
   RenderTexture2D(const TextureDescriptor& desc)
     : texture(desc),
@@ -16,6 +15,9 @@ struct RenderTexture2D {
   }
 
   void operator=(RenderTexture2D rhs) {
+    if (fbo.id)
+      fbo.dettach2D(GL_COLOR_ATTACHMENT0);
+
     texture = rhs.texture;
     fbo = rhs.fbo;
   }
@@ -25,12 +27,9 @@ struct RenderTexture2D {
     glClear(GL_COLOR_BUFFER_BIT);
   }
 
-  void draw(const Rectangle2D& area, const Shader& shader, const Texture2D* bindTex = nullptr) {
+  void draw(const Rectangle2D& area, const Shader& shader) {
     fbo.bind();
-
-    if (bindTex) bindTex->bind();
     area.draw(shader);
-    Texture2D::unbind(GL_TEXTURE_2D);
   }
 
   Texture2D texture;

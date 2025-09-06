@@ -18,14 +18,16 @@ void InputsHandler::keyCallback(GLFWwindow* window, int key, int scancode, int a
   }
 }
 
-void InputsHandler::process(RenderConfig& renderConfig) {
+void InputsHandler::process(RenderConfig* renderConfig) {
   dvec2 mouse;
   glfwGetCursorPos(global::window, &mouse.x, &mouse.y);
 
-  renderConfig.onMouseMoved(mouse);
+  renderConfig->onMouseMoved(mouse);
 
-  if (glfwGetMouseButton(global::window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS) {
-    renderConfig.onMousePressed(mouse);
+  if (glfwGetMouseButton(global::window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS && !gui::isHovered()) {
+    renderConfig->onMousePressed(mouse);
+  } else {
+    renderConfig->onMouseReleased();
   }
 }
 

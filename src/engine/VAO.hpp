@@ -2,10 +2,10 @@
 
 // Vertex Array Object
 struct VAO {
-  GLuint id;
+  GLuint id = 0;
   GLsizei size = 0;
 
-  VAO() {}
+  VAO() = default;
 
   VAO(GLsizei size) : size(size) {
     glGenVertexArrays(size, &id);
@@ -17,10 +17,20 @@ struct VAO {
     size = rhs.size;
   }
 
-  static void unbind() { glBindVertexArray(0); }
+  static void unbind() {
+    glBindVertexArray(0);
+  }
 
-  void bind()   const { glBindVertexArray(id); }
-  void clear()        { glDeleteVertexArrays(size, &id); size = 0; }
+  void bind() const {
+    glBindVertexArray(id);
+  }
+
+  void clear() {
+    if (size) {
+      glDeleteVertexArrays(size, &id);
+      size = 0;
+    }
+  }
 
   void linkAttrib(GLuint layout, GLuint numComponents, GLenum type, GLsizei stride, void* offset) const {
     glEnableVertexAttribArray(layout);

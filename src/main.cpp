@@ -108,6 +108,9 @@ int main() {
 
   gui::renderConfig = renderConfig;
 
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
   // Render loop
   while (!glfwWindowShouldClose(window)) {
     static double titleTime = glfwGetTime();
@@ -150,14 +153,19 @@ int main() {
 
     // ----- Updates --------------------------------------------- //
 
-    InputsHandler::process(*renderConfig);
+    glEnable(GL_BLEND);
+
+    profilerManager.clearTasks();
+
+    InputsHandler::process(renderConfig);
 
     renderConfig->update();
 
     // ----- Draw to main screen --------------------------------- //
 
     FBO::unbind();
-    glClearColor(0.f, 0.f, 0.f, 0.f);
+    glDisable(GL_BLEND);
+    glClearColor(0.f, 0.f, 0.f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT);
     renderConfig->drawGI();
 

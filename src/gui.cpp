@@ -33,7 +33,7 @@ void gui::draw() {
     ImGui::SetNextWindowPos({0, 0});
   });
 
-  assert(renderConfig);
+  assert(renderConfig != nullptr);
 
   ImGui::Begin("Debug");
 
@@ -43,12 +43,11 @@ void gui::draw() {
   }
 
   if (ImGui::CollapsingHeader("Draw")) {
-    RenderConfig::Mouse& mouse = renderConfig->mouse;
-    ImGui::SliderFloat("Radius", &mouse.drawRadius, 1.f, 100.f);
-    ImGui::ColorEdit3("Color", glm::value_ptr(mouse.drawColor));
+    ImGui::SliderFloat("Radius", &renderConfig->mouseRadius, 1.f, 100.f);
+    ImGui::ColorEdit3("Color", glm::value_ptr(renderConfig->mouseColor));
 
     if (ImGui::Button("Clear"))
-      renderConfig->clearScene();
+      renderConfig->sceneTexture.clear();
   }
 
   if (ImGui::CollapsingHeader("Ray march")) {
@@ -126,7 +125,8 @@ void gui::draw() {
   }
 
   if (ImGui::CollapsingHeader("Profiler")) {
-    renderConfig->profilerManager->render(400, 100, 200, 10);
+    assert(renderConfig->profilerManager != nullptr);
+    renderConfig->profilerManager->render(400, 100, 200, 1);
   }
 
   ImGui::End();

@@ -13,7 +13,6 @@ public:
   void init(uvec2 winSize);
   void addProfilier(ProfilerManager* pm);
   void update();
-  void clearScene();
   void drawGI();
 
   void onMousePressed(const vec2& pos);
@@ -39,14 +38,14 @@ private:
   Shader sdfShader   = Shader("default2D.vert", "sdf.frag");
   Shader giShader    = Shader("default2D.vert", "gi.frag");
   Shader tex2DShader = Shader("default2D.vert", "texture2D.frag");
+  Shader mouseShader = Shader("default2D.vert", "mouse.frag");
 
-  struct Mouse {
-    Shader shader = Shader("default2D.vert", "mouse.frag");
-    float drawRadius = 5.f;
-    vec3 drawColor{1.f, 0.f, 1.f};
-    vec2 prevPos;
-  } mouse;
+  // Mouse
+  float mouseRadius = 5.f;
+  vec3 mouseColor{1.f, 0.f, 1.f};
+  vec2 mousePrevPos;
 
+  // Global illumination
   int raysPerPixel = 32;
   int stepsPerRay = 32;
   float epsilon = 0.001f;
