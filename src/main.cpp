@@ -164,6 +164,10 @@ int main() {
 
     // ----- Draw to main screen --------------------------------- //
 
+    FBO::unbind();
+    glClearColor(0.f, 0.f, 0.f, 1.f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
     renderConfig->draw();
 
     gui::draw();

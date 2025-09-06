@@ -31,6 +31,7 @@ void setCursorUnderCurrentWidget() {
 void gui::draw() {
   static RunOnce a([]() {
     ImGui::SetNextWindowPos({0, 0});
+    ImGui::SetColorEditOptions(ImGuiColorEditFlags_Float);
   });
 
   assert(renderConfig != nullptr);

@@ -23,7 +23,7 @@ void RenderConfig::init(uvec2 winSize) {
 
   seedShader.setUniformTexture(sceneTexture.texture);
 
-  jfaShader.setUniformTexture(ping.texture); // same unit as seed
+  jfaShader.setUniformTexture(pong.texture); // same unit as seed
   jfaShader.setUniform2f("u_resolution", winSize);
 
   sdfShader.setUniformTexture(jfaTexture.texture);
@@ -32,8 +32,8 @@ void RenderConfig::init(uvec2 winSize) {
   giShader.setUniformTexture(sdfTexture.texture);
   giShader.setUniform2f("u_resolution", winSize);
 
-  tex2DShader.setUniformTexture(ping.texture);
-  finalShader.setUniformTexture(ping.texture);
+  tex2DShader.setUniformTexture(pong.texture);
+  finalShader.setUniformTexture(pong.texture);
 
   calcPassesJFA();
 }
@@ -132,8 +132,8 @@ void RenderConfig::drawJFA() {
 
     RenderTexture2D* temp = inputTex;
     inputTex = outputTex;
+    lastTex = outputTex;
     outputTex = temp;
-    lastTex = temp;
   }
 
   lastTex->texture.bind();
@@ -182,17 +182,17 @@ void RenderConfig::drawGI() {
     inputTex = outputTex;
     lastTex = outputTex;
     outputTex = temp;
+
+    FBO::unbind();
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_ONE);
+    lastTex->texture.bind();
+    screenRect.draw(finalShader);
+    lastTex->texture.unbind();
+    glDisable(GL_BLEND);
   }
 
   sceneTexture.texture.unbind();
   sdfTexture.texture.unbind();
-
-  FBO::unbind();
-  glClearColor(0.f, 0.f, 0.f, 1.f);
-  glClear(GL_COLOR_BUFFER_BIT);
-
-  lastTex->texture.bind();
-  screenRect.draw(finalShader);
-  lastTex->texture.unbind();
 }
 

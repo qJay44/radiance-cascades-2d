@@ -62,10 +62,10 @@ void main() {
       traveled += dist;
       if (traveled >= intervalEnd) break;
 
-      // if (isLastLayer && radDelta.a == 0.f) {
-      //   vec4 upperSample = texture(u_inputTex, texCoord);
-      //   radDelta += vec4(pow(upperSample.rgb, vec3(u_srgb)), upperSample.a);
-      // }
+      if (isLastLayer && radDelta.a == 0.f) {
+        vec4 upperSample = texture(u_inputTex, texCoord);
+        radDelta += vec4(pow(upperSample.rgb, vec3(u_srgb)), upperSample.a);
+      }
     }
 
     radiance += radDelta;
@@ -74,6 +74,6 @@ void main() {
   vec3 final = radiance.rgb * rayCountStepNorm;
   vec3 correctSRGB = pow(final, vec3(1.f / u_srgb));
 
-  FragColor = vec4(correctSRGB, 1.f);
+  FragColor = radiance * rayCountStepNorm;
 }
 

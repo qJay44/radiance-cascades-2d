@@ -43,7 +43,7 @@ private:
 
   // Mouse
   float mouseRadius = 5.f;
-  vec3 mouseColor{1.f, 0.f, 1.f};
+  vec3 mouseColor{1.f, 0.965f, 0.827f};
   vec2 mousePrevPos;
 
   // Global illumination
