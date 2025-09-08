@@ -8,19 +8,18 @@
 struct RenderTexture2D {
   RenderTexture2D() = default;
 
-  RenderTexture2D(const TextureDescriptor& desc)
-    : texture(desc),
-      fbo(FBO(1)) {
+
+  RenderTexture2D(const TextureDescriptor& desc) : texture(desc) {
+    destroy();
+    fbo.gen();
     fbo.attach2D(GL_COLOR_ATTACHMENT0, texture);
   }
 
-  void operator=(RenderTexture2D rhs) {
-    if (fbo.id)
-      fbo.dettach2D(GL_COLOR_ATTACHMENT0);
-
-    texture = rhs.texture;
-    fbo = rhs.fbo;
+  ~RenderTexture2D() {
+    destroy();
   }
+
+  RenderTexture2D& operator=(RenderTexture2D&& rhs) = default;
 
   void clear(vec4 color = vec4(vec3(0.f), 1.f)) {
     fbo.bind();
@@ -32,6 +31,13 @@ struct RenderTexture2D {
   void draw(const Rectangle2D& area, const Shader& shader) {
     fbo.bind();
     area.draw(shader);
+  }
+
+  void destroy() {
+    if (fbo.id) {
+      texture.destroy();
+      fbo.destroy();
+    }
   }
 
   Texture2D texture;

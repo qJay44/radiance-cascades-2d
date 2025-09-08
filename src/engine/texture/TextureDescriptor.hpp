@@ -1,8 +1,8 @@
 #pragma once
 
 struct TextureDescriptor {
-  std::string uniformName;
-  uvec2 size;
+  std::string uniformName{"-1"};
+  uvec2 size{};
   GLuint unit = 0;
   GLenum target         = GL_TEXTURE_2D;
   GLenum internalFormat = GL_RGB8;          // Color format in the OpenGL

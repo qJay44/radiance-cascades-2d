@@ -22,8 +22,10 @@ VAO Rectangle2D::vaoRect;
 VBO Rectangle2D::vboRect;
 
 void Rectangle2D::initVO() {
-  vaoRect = VAO(1);
-  vboRect = VBO(1, vertices.data(), vertices.size() * sizeof(Vertex2D));
+  vaoRect.gen();
+  vboRect.gen();
+
+  vboRect.store(vertices.data(), vertices.size() * sizeof(Vertex2D));
 
   vaoRect.bind();
   vboRect.bind();

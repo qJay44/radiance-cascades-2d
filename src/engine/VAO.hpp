@@ -1,35 +1,34 @@
 #pragma once
 
+#include "glObject.hpp"
+
 // Vertex Array Object
-struct VAO {
-  GLuint id = 0;
-  GLsizei size = 0;
-
-  VAO() = default;
-
-  VAO(GLsizei size) : size(size) {
-    glGenVertexArrays(size, &id);
+struct VAO final : glObject {
+  void gen() override {
+    glGenVertexArrays(1, &id);
   }
 
-  void operator=(VAO rhs) {
-    clear();
-    id = rhs.id;
-    size = rhs.size;
-  }
-
-  static void unbind() {
-    glBindVertexArray(0);
-  }
-
-  void bind() const {
+  void bind() const override {
     glBindVertexArray(id);
   }
 
-  void clear() {
-    if (size) {
-      glDeleteVertexArrays(size, &id);
-      size = 0;
+  void unbind() const override {
+    glBindVertexArray(0);
+  }
+
+  void destroy() override {
+    if (id) {
+      glDeleteVertexArrays(1, &id);
+      id = 0;
     }
+  }
+
+  VAO& operator=(VAO&& rhs) noexcept = default;
+
+  VAO() = default;
+
+  ~VAO() {
+    destroy();
   }
 
   void linkAttrib(GLuint layout, GLuint numComponents, GLenum type, GLsizei stride, void* offset) const {

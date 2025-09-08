@@ -6,7 +6,10 @@
 
 class Texture2D : public Texture {
 public:
-  Texture2D() {};
+  Texture2D() = default;
+  ~Texture2D() = default;
+
+  Texture2D& operator=(Texture2D&& rhs) = default;
 
   template<typename T = u8>
   Texture2D(const TextureDescriptor& desc, const T* pixels = nullptr) : Texture(desc) {

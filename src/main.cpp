@@ -18,8 +18,6 @@
 #include "gui.hpp"
 #include "utils/utils.hpp"
 
-using global::window;
-
 static RenderConfig* renderConfig = nullptr;
 static bool needRecalcRenderConfig = false;
 
@@ -45,11 +43,18 @@ void GLAPIENTRY MessageCallback(
 }
 
 void winResizeCallback(GLFWwindow* window, int w, int h) {
+  glfwMakeContextCurrent(window);
+  if (glfwGetCurrentContext() != window)
+    error("Failed to make context");
+
   glViewport(0, 0, w, h);
   needRecalcRenderConfig = true;
+  global::window = window;
 }
 
 int main() {
+  using global::window;
+
   // Assuming the executable is launching from its own directory
   _chdir("../../../src");
 
@@ -61,7 +66,7 @@ int main() {
   glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
   // Window init
-  window = glfwCreateWindow(1200, 900, "Title", NULL, NULL);
+  window = glfwCreateWindow(600, 500, "Title", NULL, NULL);
   ivec2 winSize;
   glfwGetWindowSize(window, &winSize.x, &winSize.y);
 
@@ -164,7 +169,7 @@ int main() {
 
     // ----- Draw to main screen --------------------------------- //
 
-    FBO::unbind();
+    FBO::Default();
     glClearColor(0.f, 0.f, 0.f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT);
 

@@ -27,7 +27,6 @@ private:
   RenderTexture2D seedTexture;
   RenderTexture2D jfaTexture;
   RenderTexture2D sdfTexture;
-  RenderTexture2D finalTexture;
   RenderTexture2D ping;
   RenderTexture2D pong;
 

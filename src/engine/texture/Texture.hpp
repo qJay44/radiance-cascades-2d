@@ -1,24 +1,24 @@
 #pragma once
 
+#include "../glObject.hpp"
 #include "TextureDescriptor.hpp"
 
-class Texture {
+class Texture : glObject {
 public:
-  static void unbind(GLenum target);
+  void bind() const override final;
+  void unbind() const override final;
+  void destroy() override final;
+
+  Texture& operator=(Texture&& rhs) noexcept;
 
   Texture() = default;
-  Texture(const TextureDescriptor& desc); // Only generates and binds texture
-
-  void operator=(Texture rhs);
+  ~Texture();
 
   const std::string& getUniformName() const;
   const GLuint& getUnit() const;
   const GLuint& getId() const;
   const uvec2& getSize() const;
   uvec2 getSizeNative() const;
-
-  void bind() const;
-  void unbind() const;
 
   void bindImage(GLenum access) const;
 
@@ -28,7 +28,7 @@ public:
   }
 
 protected:
-  TextureDescriptor desc;
+  TextureDescriptor desc{};
   GLuint id = 0;
 
 protected:
@@ -37,5 +37,9 @@ protected:
     size_t rowSize = desc.size.x * sizeof(T);
     glPixelStorei(GL_UNPACK_ALIGNMENT, (rowSize % 4 == 0) ? 4 : 1);
   }
+
+  Texture(const TextureDescriptor& desc); // Only generates and binds texture
+
+  void gen() override final;
 };
 

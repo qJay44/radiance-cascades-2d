@@ -52,8 +52,8 @@ void gui::draw() {
   }
 
   if (ImGui::CollapsingHeader("Global Illumination")) {
-    ImGui::SliderInt("Base ray count", &renderConfig->rayCountBase, 4, 128);
-    ImGui::SliderInt("Max steps per ray", &renderConfig->rayMaxSteps, 1, 128);
+    ImGui::SliderInt("Base ray count", &renderConfig->rayCountBase, 4, 16);
+    ImGui::SliderInt("Max steps per ray", &renderConfig->rayMaxSteps, 1, 32);
     ImGui::SliderFloat("interval0", &renderConfig->interval0, 0.01f, 1.41f);
     ImGui::SliderFloat("Scale", &renderConfig->scale, 0.01f, 1.f);
     ImGui::SliderFloat("sRGB", &renderConfig->srgb, 1.f, 20.f);

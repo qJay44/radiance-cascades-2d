@@ -1,12 +1,12 @@
 #include "Texture.hpp"
+#include "utils/utils.hpp"
 #include <cstdio>
 
-void Texture::unbind(GLenum target) {
-  glBindTexture(target, 0);
-}
-
-Texture::Texture(const TextureDescriptor& desc) : desc(desc) {
+void Texture::gen() {
   glGenTextures(1, &id);
+  if (!id)
+    error("[Texture::gen] generated with 0 id");
+
   bind();
   glTexParameteri(desc.target, GL_TEXTURE_MIN_FILTER, desc.minFilter);
   glTexParameteri(desc.target, GL_TEXTURE_MAG_FILTER, desc.magFilter);
@@ -16,12 +16,40 @@ Texture::Texture(const TextureDescriptor& desc) : desc(desc) {
   // Derived class implementation ...
 }
 
-void Texture::operator=(Texture rhs) {
-  if (id)
-    glDeleteTextures(desc.target, &id);
+void Texture::bind() const {
+  glActiveTexture(GL_TEXTURE0 + desc.unit);
+  glBindTexture(desc.target, id);
+}
 
-  desc = rhs.desc;
-  id = rhs.id;
+void Texture::unbind() const {
+  glBindTexture(desc.target, 0);
+}
+
+void Texture::destroy() {
+  if (id) {
+    glDeleteTextures(1, &id);
+    id = 0;
+  }
+}
+
+Texture& Texture::operator=(Texture&& rhs) noexcept {
+  if (this != &rhs) {
+    destroy();
+    id = rhs.id;
+    desc = std::move(rhs.desc);
+    rhs.id = 0;
+    rhs.desc.uniformName.clear();
+  }
+
+  return *this;
+}
+
+Texture::~Texture() {
+  destroy();
+}
+
+Texture::Texture(const TextureDescriptor& desc) : desc(desc) {
+  gen();
 }
 
 const std::string& Texture::getUniformName() const {
@@ -52,15 +80,6 @@ uvec2 Texture::getSizeNative() const {
   assert(size.y >= 0);
 
   return size;
-}
-
-void Texture::bind() const {
-  glActiveTexture(GL_TEXTURE0 + desc.unit);
-  glBindTexture(desc.target, id);
-}
-
-void Texture::unbind() const {
-  unbind(desc.target);
 }
 
 void Texture::bindImage(GLenum access) const {

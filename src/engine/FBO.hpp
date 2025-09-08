@@ -1,37 +1,39 @@
 #pragma once
 
+#include "glObject.hpp"
 #include "texture/Texture2D.hpp"
 #include <cstdio>
 
-struct FBO {
-  GLuint id = 0;
-  GLsizei size = 0;
-
-  FBO() = default;
-
-  FBO(GLsizei size) : size(size) {
-    glGenFramebuffers(size, &id);
+struct FBO final : glObject {
+  void gen() override {
+    glGenFramebuffers(1, &id);
   }
 
-  void operator=(FBO rhs) {
-    clear();
-    id = rhs.id;
-    size = rhs.size;
-  }
-
-  static void unbind() {
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-  }
-
-  void bind() const {
+  void bind() const override {
     glBindFramebuffer(GL_FRAMEBUFFER, id);
   }
 
-  void clear() {
-    if (size) {
-      glDeleteFramebuffers(size, &id);
-      size = 0;
+  void unbind() const override {
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  }
+
+  void destroy() override {
+    if (id) {
+      glDeleteFramebuffers(1, &id);
+      id = 0;
     }
+  }
+
+  static void Default() {
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  }
+
+  FBO& operator=(FBO&& rhs) noexcept = default;
+
+  FBO() = default;
+
+  ~FBO() {
+    destroy();
   }
 
   void attach2D(GLenum attachment, const Texture2D& tex) const {

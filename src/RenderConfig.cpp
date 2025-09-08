@@ -1,9 +1,11 @@
 #include "RenderConfig.hpp"
-#include "ScopeProfileTask.hpp"
 
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <cstdio>
+
+#include "ScopeProfileTask.hpp"
 
 RenderConfig::RenderConfig(ProfilerManager* profilerManager) {
   this->profilerManager = profilerManager;
@@ -183,7 +185,7 @@ void RenderConfig::drawGI() {
     lastTex = outputTex;
     outputTex = temp;
 
-    FBO::unbind();
+    FBO::Default();
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE);
     lastTex->texture.bind();
